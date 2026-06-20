@@ -1,18 +1,22 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { AnimatedCharacters, type CharMode } from "./AnimatedCharacters";
 import { Logo } from "./ui/logo";
+import { useLoginMutation } from "../lib/services/api";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [pwFocused, setPwFocused] = useState(false);
-  const [submitState, setSubmitState] = useState<"idle" | "success" | "error">(
-    "idle"
-  );
+  const [apiError, setApiError] = useState("");
+  const [submitState, setSubmitState] = useState<"idle" | "success" | "error">("idle");
+  const router = useRouter();
+
+  const [login, { isLoading }] = useLoginMutation();
 
   const mode: CharMode =
     submitState === "success"
@@ -25,11 +29,29 @@ export function LoginForm() {
       ? "typing"
       : "idle";
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const valid = /\S+@\S+\.\S+/.test(email) && password.length >= 6;
-    setSubmitState(valid ? "success" : "error");
-    setTimeout(() => setSubmitState("idle"), 2400);
+    setApiError("");
+    setSubmitState("idle");
+
+    try {
+      const result = await login({ email, password }).unwrap();
+      setSubmitState("success");
+      
+      // Store tokens
+      if (result.data?.accessToken) {
+        localStorage.setItem('accessToken', result.data.accessToken);
+        localStorage.setItem('refreshToken', result.data.refreshToken);
+      }
+      
+      setTimeout(() => {
+        router.push('/dashboard'); // or wherever they should go post-login
+      }, 1000); // give it time to show the success animation
+    } catch (err: any) {
+      setSubmitState("error");
+      setApiError(err?.data?.error?.message || err.message || "An error occurred during login.");
+      setTimeout(() => setSubmitState("idle"), 2400);
+    }
   };
 
   return (
@@ -54,6 +76,12 @@ export function LoginForm() {
           </p> */}
 
           <form onSubmit={onSubmit} className="mt-8 space-y-5">
+            {apiError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-md mb-4 text-center">
+                {apiError}
+              </div>
+            )}
+            
             <div className="relative pt-3 mt-2">
               <input
                 type="email"
@@ -112,9 +140,12 @@ export function LoginForm() {
 
             <button
               type="submit"
-              className="w-full cursor-pointer bg-[#111] text-white rounded-full py-3 font-medium hover:bg-black transition-colors"
+              disabled={isLoading}
+              className={`w-full cursor-pointer text-white rounded-full py-3 font-medium transition-colors ${
+                isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-[#111] hover:bg-black"
+              }`}
             >
-              Log In
+              {isLoading ? "Logging in..." : "Log In"}
             </button>
 
             <button

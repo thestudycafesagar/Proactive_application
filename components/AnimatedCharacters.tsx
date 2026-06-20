@@ -277,7 +277,7 @@ export function AnimatedCharacters({ mode }: Props) {
     <svg
       ref={svgRef}
       viewBox="0 0 600 600"
-      className="w-full max-w-[520px] h-auto select-none"
+      className="w-full max-w-130 h-auto select-none"
       aria-hidden="true"
     >
       <ellipse cx="300" cy="555" rx="220" ry="10" fill="rgba(0,0,0,0.06)" />

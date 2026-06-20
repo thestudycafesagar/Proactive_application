@@ -55,8 +55,8 @@ export function LoginForm() {
   };
 
   return (
-    <div className="h-screen w-full bg-[#000] flex items-center justify-center p-4 sm:p-8 overflow-hidden">
-      <div className="w-full max-w-5xl h-full max-h-[90vh] md:max-h-[650px] grid md:grid-cols-2 rounded-3xl overflow-hidden bg-white shadow-2xl relative">
+    <div className="h-screen w-full bg-black flex items-center justify-center p-4 sm:p-8 overflow-hidden">
+      <div className="w-full max-w-5xl h-full max-h-[90vh] md:max-h-162.5 grid md:grid-cols-2 rounded-3xl overflow-hidden bg-white shadow-2xl relative">
         {/* Left: illustration */}
         <div className="bg-[#ececea] hidden md:flex items-end justify-center p-8 pb-12 relative">
           <AnimatedCharacters mode={mode} />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AnimatedCharacters, type CharMode } from "./AnimatedCharacters";
 import { Logo } from "./ui/logo";
@@ -55,51 +55,46 @@ export function LoginForm() {
   };
 
   return (
-    <div className="h-screen w-full bg-black flex items-center justify-center p-4 sm:p-8 overflow-hidden">
-      <div className="w-full max-w-5xl h-full max-h-[90vh] md:max-h-162.5 grid md:grid-cols-2 rounded-3xl overflow-hidden bg-white shadow-2xl relative">
+    <div className="h-screen w-full bg-primary flex items-center justify-center overflow-hidden">
+      <div className="w-full h-full grid md:grid-cols-2 overflow-hidden bg-surface border border-border shadow-2xl relative">
         {/* Left: illustration */}
         <div className="bg-[#ececea] hidden md:flex items-end justify-center p-8 pb-12 relative">
           <AnimatedCharacters mode={mode} />
         </div>
 
         {/* Right: form */}
-        <div className="bg-white p-6 sm:p-6 lg:py-6 lg:px-16 flex flex-col overflow-y-auto">
-          <div className="flex justify-center mb-6">
+        <div className="bg-surface p-6 sm:p-6 lg:py-6 lg:px-16 flex flex-col overflow-y-auto">
+          <div className="flex flex-col items-center text-center mb-6">
            <Logo />
+           <h1 className="mt-6 font-display text-2xl font-bold text-foreground">Welcome back</h1>
+           <p className="mt-2 text-sm text-muted-foreground">Please enter your details to log in.</p>
           </div>
 
-          {/* <h1 className="text-3xl font-bold text-center text-[#111]">
-            Welcome back!
-          </h1>
-          <p className="text-sm text-center text-gray-500 mt-2">
-            Please enter your details
-          </p> */}
-
-          <form onSubmit={onSubmit} className="mt-8 space-y-5">
+          <form onSubmit={onSubmit} className="mt-8 space-y-4">
             {apiError && (
               <div className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-md mb-4 text-center">
                 {apiError}
               </div>
             )}
             
-            <div className="relative pt-3 mt-2">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                <Mail size={18} />
+              </div>
               <input
-                type="email"
                 id="email"
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder=" "
-                className="peer w-full bg-transparent border-b border-gray-300 focus:border-[#111] outline-none py-2 text-[#111] placeholder-transparent [&:-webkit-autofill]:[box-shadow:0_0_0px_1000px_white_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:#111]"
+                placeholder="Email id"
+                className="w-full bg-white border border-gray-300 focus:border-[#111] rounded-full outline-none py-3 pl-11 pr-4 text-sm text-[#111] placeholder-gray-400 transition-colors"
               />
-              <label
-                htmlFor="email"
-                className="absolute left-0 -top-1.5 text-xs text-gray-500 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-1.5 peer-focus:text-xs peer-focus:text-[#111] peer-autofill:-top-1.5 peer-autofill:text-xs cursor-text"
-              >
-                Email
-              </label>
             </div>
 
-            <div className="relative pt-3 mt-2">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                <Lock size={18} />
+              </div>
               <input
                 id="password"
                 type={showPw ? "text" : "password"}
@@ -107,21 +102,13 @@ export function LoginForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 onFocus={() => setPwFocused(true)}
                 onBlur={() => setPwFocused(false)}
-                placeholder=" "
-                className="peer w-full bg-transparent border-b border-gray-300 focus:border-[#111] outline-none py-2 pr-8 text-[#111] placeholder-transparent [&:-webkit-autofill]:[box-shadow:0_0_0px_1000px_white_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:#111]"
+                placeholder="Password"
+                className={`w-full bg-white border ${submitState === "error" ? "border-orange-500 focus:border-orange-500" : "border-gray-300 focus:border-[#111]"} rounded-full outline-none py-3 pl-11 pr-12 text-sm text-[#111] placeholder-gray-400 transition-colors`}
               />
-              <label
-                htmlFor="password"
-                className={`absolute left-0 -top-1.5 text-xs transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-1.5 peer-focus:text-xs peer-autofill:-top-1.5 peer-autofill:text-xs cursor-text ${
-                  submitState === "error" ? "text-orange-500 peer-focus:text-orange-500" : "text-gray-500 peer-focus:text-[#111]"
-                }`}
-              >
-                Password
-              </label>
               <button
                 type="button"
                 onClick={() => setShowPw((v) => !v)}
-                className="absolute right-0 top-3 text-gray-500 hover:text-gray-800 z-10"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#111] z-10 transition-colors"
                 aria-label="Toggle password visibility"
               >
                 {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -142,7 +129,7 @@ export function LoginForm() {
               type="submit"
               disabled={isLoading}
               className={`w-full cursor-pointer text-white rounded-full py-3 font-medium transition-colors ${
-                isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-[#111] hover:bg-black"
+                isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-primary hover:bg-black"
               }`}
             >
               {isLoading ? "Logging in..." : "Log In"}

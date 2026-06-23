@@ -1,11 +1,14 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AnimatedCharacters, type CharMode } from "./AnimatedCharacters";
 import { Logo } from "./ui/logo";
 import { useLoginMutation } from "../lib/services/api";
+
+import { useAuth } from "../contexts/AuthContext";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -13,8 +16,17 @@ export function LoginForm() {
   const [showPw, setShowPw] = useState(false);
   const [pwFocused, setPwFocused] = useState(false);
   const [apiError, setApiError] = useState("");
-  const [submitState, setSubmitState] = useState<"idle" | "success" | "error">("idle");
+  const [submitState, setSubmitState] = useState<"idle" | "success" | "error">(
+    "idle",
+  );
   const router = useRouter();
+  const { setAuthToken, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      router.push("/");
+    }
+  }, [isAuthenticated, authLoading, router]);
 
   const [login, { isLoading }] = useLoginMutation();
 
@@ -22,12 +34,12 @@ export function LoginForm() {
     submitState === "success"
       ? "success"
       : submitState === "error"
-      ? "error"
-      : pwFocused && !showPw
-      ? "hidden"
-      : email.length > 0
-      ? "typing"
-      : "idle";
+        ? "error"
+        : pwFocused && !showPw
+          ? "hidden"
+          : email.length > 0
+            ? "typing"
+            : "idle";
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,19 +49,25 @@ export function LoginForm() {
     try {
       const result = await login({ email, password }).unwrap();
       setSubmitState("success");
-      
       // Store tokens
-      if (result.data?.accessToken) {
-        localStorage.setItem('accessToken', result.data.accessToken);
-        localStorage.setItem('refreshToken', result.data.refreshToken);
+      if (result?.accessToken) {
+        localStorage.setItem("accessToken", result.accessToken);
+        localStorage.setItem("refreshToken", result.refreshToken);
+        setAuthToken(result.accessToken);
       }
-      
-      setTimeout(() => {
-        router.push('/dashboard'); // or wherever they should go post-login
-      }, 1000); // give it time to show the success animation
+      router.push("/"); // redirect to dashboard root
+
+      console.log("Login Success");
+
+      // setTimeout(() => {
+      // }, 1000); // give it time to show the success animation
     } catch (err: any) {
       setSubmitState("error");
-      setApiError(err?.data?.error?.message || err.message || "An error occurred during login.");
+      setApiError(
+        err?.data?.error?.message ||
+          err.message ||
+          "An error occurred during login.",
+      );
       setTimeout(() => setSubmitState("idle"), 2400);
     }
   };
@@ -63,11 +81,15 @@ export function LoginForm() {
         </div>
 
         {/* Right: form */}
-        <div className="bg-surface p-6 sm:p-6 lg:py-6 lg:px-16 flex flex-col overflow-y-auto">
+        <div className="bg-surface bg-white p-6 sm:p-6 lg:py-6 lg:px-16 flex flex-col overflow-y-auto">
           <div className="flex flex-col items-center text-center mb-6">
-           <Logo />
-           <h1 className="mt-6 font-display text-2xl font-bold text-foreground">Welcome back</h1>
-           <p className="mt-2 text-sm text-muted-foreground">Please enter your details to log in.</p>
+            <Logo />
+            <h1 className="mt-6 font-display text-2xl font-bold text-foreground">
+              Welcome back
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Please enter your details to log in.
+            </p>
           </div>
 
           <form onSubmit={onSubmit} className="mt-8 space-y-4">
@@ -76,7 +98,7 @@ export function LoginForm() {
                 {apiError}
               </div>
             )}
-            
+
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
                 <Mail size={18} />
@@ -117,19 +139,28 @@ export function LoginForm() {
 
             <div className="flex items-center justify-between text-xs">
               <label className="flex items-center gap-2 text-gray-600">
-                <input type="checkbox" defaultChecked className="accent-[#111]" />
+                <input
+                  type="checkbox"
+                  defaultChecked
+                  className="accent-[#111]"
+                />
                 Remember for 30 days
               </label>
-              <a href="#" className="text-gray-500 hover:text-[#111]">
+              <Link
+                href="/forgot-password"
+                className="text-gray-500 hover:text-[#111]"
+              >
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
               className={`w-full cursor-pointer text-white rounded-full py-3 font-medium transition-colors ${
-                isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-primary hover:bg-black"
+                isLoading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-primary hover:bg-black"
               }`}
             >
               {isLoading ? "Logging in..." : "Log In"}
@@ -146,7 +177,10 @@ export function LoginForm() {
 
           <p className="text-xs text-center text-gray-500 mt-6">
             Don't have an account?{" "}
-            <a href="http://localhost:3000/signup" className="text-[#111] font-medium">
+            <a
+              href={`${process.env.NEXT_PUBLIC_MAIN_URL || "http://localhost:3000"}/signup`}
+              className="text-[#111] font-medium"
+            >
               Sign Up
             </a>
           </p>

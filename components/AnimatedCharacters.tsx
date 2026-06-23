@@ -20,28 +20,35 @@ export function AnimatedCharacters({ mode }: Props) {
   const orangeBodyRef = useRef<SVGGElement>(null);
 
   // Eye/pupil refs — 7 eyes total
-  const eyeGroupRefs = useRef<(SVGGElement | SVGCircleElement | SVGPathElement | null)[]>(Array(7).fill(null));
+  const eyeGroupRefs = useRef<
+    (SVGGElement | SVGCircleElement | SVGPathElement | null)[]
+  >(Array(7).fill(null));
   const pupilRefs = useRef<(SVGCircleElement | null)[]>(Array(7).fill(null));
   const smoothEye = useRef(
     // [cx, cy] of each eye in SVG space
     [
-      { x: 258, y: 195 }, { x: 322, y: 195 }, // purple
-      { x: 368, y: 305 }, { x: 412, y: 305 }, // black
-      { x: 470, y: 355 },                       // yellow
-      { x: 175, y: 450 }, { x: 235, y: 450 },  // orange
-    ]
+      { x: 258, y: 195 },
+      { x: 322, y: 195 }, // purple
+      { x: 368, y: 305 },
+      { x: 412, y: 305 }, // black
+      { x: 470, y: 355 }, // yellow
+      { x: 175, y: 450 },
+      { x: 235, y: 450 }, // orange
+    ],
   );
 
   // Smooth body transforms
   const smoothBody = useRef({
     purple: { tx: 0, ty: 0, rot: 0 },
-    black:  { tx: 0, ty: 0, rot: 0 },
+    black: { tx: 0, ty: 0, rot: 0 },
     yellow: { tx: 0, ty: 0, rot: 0 },
     orange: { tx: 0, ty: 0, rot: 0 },
   });
 
   const modeRef = useRef(mode);
-  useEffect(() => { modeRef.current = mode; }, [mode]);
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -49,6 +56,7 @@ export function AnimatedCharacters({ mode }: Props) {
 
     const onMove = (e: MouseEvent) => {
       const rect = svg.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return; // Prevent NaN if SVG is hidden
       mouseRef.current = {
         x: ((e.clientX - rect.left) / rect.width) * 600,
         y: ((e.clientY - rect.top) / rect.height) * 600,
@@ -99,7 +107,8 @@ export function AnimatedCharacters({ mode }: Props) {
 
       // ── CURSOR LEAN ───────────────────────────────────────────────────────
       // Bodies lean towards mouse a little — the peek effect
-      let leanX = 0, leanY = 0;
+      let leanX = 0,
+        leanY = 0;
       if (mouse) {
         // Normalise: center of SVG is 300,400. Map to -1..1
         leanX = ((mouse.x - 300) / 300) * 8; // max 8px horizontal lean
@@ -107,7 +116,7 @@ export function AnimatedCharacters({ mode }: Props) {
       }
 
       // Mode overrides
-      const isError   = currentMode === "error";
+      const isError = currentMode === "error";
       const isSuccess = currentMode === "success";
 
       // Target transforms for each body
@@ -138,8 +147,8 @@ export function AnimatedCharacters({ mode }: Props) {
       const sb = smoothBody.current;
       const BODY_LERP = 0.06; // slow = floaty/alive feel
       for (const key of ["purple", "black", "yellow", "orange"] as const) {
-        sb[key].tx  = lerp(sb[key].tx,  targets[key].tx,  BODY_LERP);
-        sb[key].ty  = lerp(sb[key].ty,  targets[key].ty,  BODY_LERP);
+        sb[key].tx = lerp(sb[key].tx, targets[key].tx, BODY_LERP);
+        sb[key].ty = lerp(sb[key].ty, targets[key].ty, BODY_LERP);
         sb[key].rot = lerp(sb[key].rot, targets[key].rot, BODY_LERP);
       }
 
@@ -147,18 +156,18 @@ export function AnimatedCharacters({ mode }: Props) {
       const applyBody = (
         ref: React.RefObject<SVGGElement | null>,
         k: keyof typeof sb,
-        origin: string
+        origin: string,
       ) => {
         const el = ref.current;
         if (!el) return;
         const { tx, ty, rot } = sb[k];
         el.setAttribute(
           "transform",
-          `translate(${tx}, ${ty}) rotate(${rot}, ${origin})`
+          `translate(${tx}, ${ty}) rotate(${rot}, ${origin})`,
         );
       };
       applyBody(purpleBodyRef, "purple", "290 500");
-      applyBody(blackBodyRef,  "black",  "390 520");
+      applyBody(blackBodyRef, "black", "390 520");
       applyBody(yellowBodyRef, "yellow", "470 520");
       applyBody(orangeBodyRef, "orange", "205 530");
 
@@ -178,8 +187,16 @@ export function AnimatedCharacters({ mode }: Props) {
         }
 
         const EYE_LERP = 0.18;
-        smoothEye.current[i].x = lerp(smoothEye.current[i].x, targetX, EYE_LERP);
-        smoothEye.current[i].y = lerp(smoothEye.current[i].y, targetY, EYE_LERP);
+        smoothEye.current[i].x = lerp(
+          smoothEye.current[i].x,
+          targetX,
+          EYE_LERP,
+        );
+        smoothEye.current[i].y = lerp(
+          smoothEye.current[i].y,
+          targetY,
+          EYE_LERP,
+        );
 
         const dx = smoothEye.current[i].x - cx;
         const dy = smoothEye.current[i].y - cy;
@@ -212,33 +229,46 @@ export function AnimatedCharacters({ mode }: Props) {
 
   // ── Mouth paths ──────────────────────────────────────────────────────────
   const orangeMouth =
-    mode === "success" ? "M180 470 Q205 500 230 470"
-    : mode === "error" ? "M180 485 Q205 460 230 485"
-    : mode === "typing" ? "M183 472 Q205 488 227 472"
-    : "M188 478 Q205 482 222 478";
+    mode === "success"
+      ? "M180 470 Q205 500 230 470"
+      : mode === "error"
+        ? "M180 485 Q205 460 230 485"
+        : mode === "typing"
+          ? "M183 472 Q205 488 227 472"
+          : "M188 478 Q205 482 222 478";
 
   const purpleMouth =
-    mode === "error" ? "M275 215 Q290 200 305 215"
-    : mode === "success" ? "M275 210 Q290 225 305 210"
-    : "M273 213 h34";
+    mode === "error"
+      ? "M275 215 Q290 200 305 215"
+      : mode === "success"
+        ? "M275 210 Q290 225 305 210"
+        : "M273 213 h34";
 
   const yellowMouth =
-    mode === "error" ? "M455 360 Q470 348 485 360"
-    : mode === "success" ? "M455 355 Q470 370 485 355"
-    : "M450 358 h40";
+    mode === "error"
+      ? "M455 360 Q470 348 485 360"
+      : mode === "success"
+        ? "M455 355 Q470 370 485 355"
+        : "M450 358 h40";
 
   const hidden = mode === "hidden";
 
   // ── Eye renderer ─────────────────────────────────────────────────────────
   const renderEye = (
-    i: number, cx: number, cy: number, r: number, isSolid: boolean
+    i: number,
+    cx: number,
+    cy: number,
+    r: number,
+    isSolid: boolean,
   ) => {
     const size = r * 1.8;
     if (hidden) {
       return (
         <path
           key={i}
-          ref={el => { eyeGroupRefs.current[i] = el; }}
+          ref={(el) => {
+            eyeGroupRefs.current[i] = el;
+          }}
           d={`M ${cx - size} ${cy} Q ${cx} ${cy + size * 0.8} ${cx + size} ${cy}`}
           stroke="#111"
           strokeWidth={Math.max(2.5, size * 0.25)}
@@ -251,7 +281,9 @@ export function AnimatedCharacters({ mode }: Props) {
       return (
         <circle
           key={i}
-          ref={el => { eyeGroupRefs.current[i] = el as unknown as SVGGElement; }}
+          ref={(el) => {
+            eyeGroupRefs.current[i] = el as unknown as SVGGElement;
+          }}
           cx={cx}
           cy={cy}
           r={size * 0.7}
@@ -260,10 +292,17 @@ export function AnimatedCharacters({ mode }: Props) {
       );
     }
     return (
-      <g key={i} ref={el => { eyeGroupRefs.current[i] = el; }}>
+      <g
+        key={i}
+        ref={(el) => {
+          eyeGroupRefs.current[i] = el;
+        }}
+      >
         <circle cx={cx} cy={cy} r={size} fill="#fff" />
         <circle
-          ref={el => { pupilRefs.current[i] = el; }}
+          ref={(el) => {
+            pupilRefs.current[i] = el;
+          }}
           cx={cx}
           cy={cy}
           r={size * 0.45}
@@ -289,7 +328,10 @@ export function AnimatedCharacters({ mode }: Props) {
         {renderEye(1, 322, 195, 7, false)}
         <path
           d={purpleMouth}
-          stroke="#111" strokeWidth="5" strokeLinecap="round" fill="none"
+          stroke="#111"
+          strokeWidth="5"
+          strokeLinecap="round"
+          fill="none"
           style={{ transition: "d 350ms ease" }}
         />
       </g>
@@ -307,7 +349,10 @@ export function AnimatedCharacters({ mode }: Props) {
         {renderEye(4, 470, 355, 5, false)}
         <path
           d={yellowMouth}
-          stroke="#111" strokeWidth="5" strokeLinecap="round" fill="none"
+          stroke="#111"
+          strokeWidth="5"
+          strokeLinecap="round"
+          fill="none"
           style={{ transition: "d 350ms ease" }}
         />
       </g>
@@ -319,7 +364,10 @@ export function AnimatedCharacters({ mode }: Props) {
         {renderEye(6, 235, 450, 8, true)}
         <path
           d={orangeMouth}
-          stroke="#111" strokeWidth="5" strokeLinecap="round" fill="none"
+          stroke="#111"
+          strokeWidth="5"
+          strokeLinecap="round"
+          fill="none"
           style={{ transition: "d 350ms ease" }}
         />
       </g>

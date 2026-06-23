@@ -15,7 +15,14 @@ export interface AuthUser {
   email: string;
   role: "Admin" | "Accountant" | "Staff" | "Team Leader";
   tenant: string;
+  joinDate: string;
+  workspace: string;
+  phone: string;
+  location: string;
+  bio: string;
   initials: string;
+  plan: string;
+  avatar?: string;
 }
 
 interface AuthContextValue {
@@ -52,12 +59,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   if (data?.user) {
     const backendUser = data.user;
+    console.log("User from API:", backendUser);
     user = {
       id: backendUser._id || backendUser.id,
       name: backendUser.name || backendUser.username,
       email: backendUser.email,
       role: backendUser.roleId?.name || "Admin",
-      tenant: "Workspace",
+      tenant: backendUser.tenantId?.name || "Workspace",
+      joinDate: backendUser.createdAt,
+      workspace: backendUser.tenantId?.name || "Default Workspace",
+      phone: backendUser.phone || "",
+      location: backendUser.location || "",
+      bio: backendUser.bio || "",
+      plan: backendUser.tenantId?.plan?.razorpaySubscriptionId ? "Premium" : "Free",
+      avatar: backendUser.photoUrl 
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${backendUser.photoUrl}`
+        : undefined,
       initials: (backendUser.name?.[0] || backendUser.email?.[0] || "U").toUpperCase(),
     };
   }

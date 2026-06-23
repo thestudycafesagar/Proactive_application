@@ -30,58 +30,44 @@ import {
 
 const AVATAR_STORAGE_KEY = "proactive.avatar";
 
+import { useUploadAvatarMutation } from "@/lib/services/api";
+
 export default function ProfilePage() {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [avatar, setAvatar] = useState<string | null>(null);
+  const [uploadAvatar, { isLoading: isUploading }] = useUploadAvatarMutation();
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(AVATAR_STORAGE_KEY);
-      if (saved) setAvatar(saved);
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload an image file");
       return;
     }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const result = reader.result as string;
-      setAvatar(result);
-      try {
-        localStorage.setItem(AVATAR_STORAGE_KEY, result);
-      } catch {
-        toast.error("Image is too large to store locally");
-      }
+    
+    const formData = new FormData();
+    formData.append("avatar", file);
+    
+    try {
+      await uploadAvatar(formData).unwrap();
       toast.success("Avatar updated");
-    };
-    reader.readAsDataURL(file);
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to upload avatar");
+    }
   };
 
   const handleRemoveAvatar = () => {
-    setAvatar(null);
-    try {
-      localStorage.removeItem(AVATAR_STORAGE_KEY);
-    } catch (e) {
-      console.error(e);
-    }
-    toast.success("Avatar removed");
+    // Currently removal is not implemented in backend, just show toast
+    toast.error("Removing avatar is not supported yet");
   };
 
   const [form, setForm] = useState({
     name: user?.name ?? "",
     email: user?.email ?? "",
-    phone: "+1 (555) 123-4567",
-    location: "San Francisco, CA",
-    bio: "Senior accountant focused on B2B SaaS and recurring revenue clients.",
+    phone: user?.phone ?? "",
+    location: user?.location ?? "",
+    bio: user?.bio ?? "",
   });
 
   const [password, setPassword] = useState({
@@ -129,26 +115,26 @@ export default function ProfilePage() {
           preferences.
         </p>
       </div>
-
       {/* Header card */}
       <Card>
         <CardContent className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center">
           <div className="relative h-20 w-20 shrink-0">
-            {avatar ? (
+            {user?.avatar ? (
               <img
-                src={avatar}
+                src={user.avatar}
                 alt="Avatar preview"
-                className="h-full w-full rounded-full object-cover ring-2 ring-border"
+                className={`h-full w-full rounded-full object-cover ring-2 ring-border ${isUploading ? 'opacity-50' : ''}`}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground">
+              <div className={`flex h-full w-full items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground ${isUploading ? 'opacity-50' : ''}`}>
                 {user?.initials}
               </div>
             )}
             <button
               type="button"
+              disabled={isUploading}
               onClick={() => fileRef.current?.click()}
-              className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-muted shadow-sm ring-1 ring-border hover:bg-accent transition-colors"
+              className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-muted shadow-sm ring-1 ring-border hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Change avatar"
             >
               <Camera className="h-3.5 w-3.5 text-muted-foreground" />
@@ -160,11 +146,12 @@ export default function ProfilePage() {
             accept="image/*"
             className="hidden"
             onChange={handleFileChange}
+            disabled={isUploading}
           />
           <div className="flex-1 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-xl font-semibold">{user?.name}</h2>
-              <Badge variant="secondary" className="gap-1">
+              <Badge variant="secondary" className="gap-1 font-normal">
                 <Shield className="h-3 w-3" />
                 {user?.role}
               </Badge>
@@ -176,33 +163,21 @@ export default function ProfilePage() {
               </span>
               <span className="flex items-center gap-1.5">
                 <Building2 className="h-3.5 w-3.5" />
-                {user?.tenant}
+                {user?.workspace}
               </span>
               <span className="flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5" />
-                Joined Jan 2024
+                {new Date(user?.joinDate || "").toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
               </span>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={() => fileRef.current?.click()}>
-              <Camera className="mr-2 h-4 w-4" />
-              Change avatar
-            </Button>
-            {avatar && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleRemoveAvatar}
-                title="Remove avatar"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
+         
         </CardContent>
       </Card>
-
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Personal info */}
         <Card className="lg:col-span-2">

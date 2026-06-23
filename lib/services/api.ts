@@ -14,6 +14,7 @@ export const applicationApi = createApi({
       return headers;
     },
   }),
+  tagTypes: ["User"],
   endpoints: (builder) => ({
     login: builder.mutation({
       query: (credentials) => ({
@@ -41,6 +42,16 @@ export const applicationApi = createApi({
     }),
     getMe: builder.query({
       query: () => "/auth/me",
+      providesTags: ["User"],
+      transformResponse: (response: { data: any }) => response.data,
+    }),
+    uploadAvatar: builder.mutation({
+      query: (formData: FormData) => ({
+        url: "/auth/me/avatar",
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["User"],
       transformResponse: (response: { data: any }) => response.data,
     }),
   }),
@@ -51,4 +62,5 @@ export const {
   useForgotPasswordMutation,
   useResetPasswordMutation,
   useGetMeQuery,
+  useUploadAvatarMutation,
 } = applicationApi;

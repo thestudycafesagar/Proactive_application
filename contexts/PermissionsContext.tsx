@@ -15,21 +15,25 @@ export type Permission =
   | "settings.view"
   | "settings.manage_users";
 
+const adminPermissions: Permission[] = [
+  "clients.view",
+  "clients.create",
+  "clients.edit",
+  "clients.delete",
+  "tasks.view",
+  "tasks.create",
+  "tasks.edit",
+  "invoices.view",
+  "invoices.create",
+  "invoices.edit",
+  "settings.view",
+  "settings.manage_users",
+];
+
 const RBAC: Record<string, Permission[]> = {
-  Admin: [
-    "clients.view",
-    "clients.create",
-    "clients.edit",
-    "clients.delete",
-    "tasks.view",
-    "tasks.create",
-    "tasks.edit",
-    "invoices.view",
-    "invoices.create",
-    "invoices.edit",
-    "settings.view",
-    "settings.manage_users",
-  ],
+  Admin: adminPermissions,
+  "Super Admin": adminPermissions,
+  "System Super Admin": adminPermissions,
   "Team Leader": [
     "clients.view",
     "clients.create",

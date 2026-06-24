@@ -14,18 +14,21 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+import { usePermissions, type Permission } from "@/contexts/PermissionsContext";
+
 type NavItem = {
   to: string;
   label: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
+  requiredPermission?: Permission;
 };
 const navItems: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/clients", label: "Clients", icon: Users },
-  { to: "/tasks", label: "Tasks", icon: CheckSquare },
-  { to: "/invoices", label: "Invoices", icon: Receipt },
-  { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/clients", label: "Clients", icon: Users, requiredPermission: "clients.view" },
+  { to: "/tasks", label: "Tasks", icon: CheckSquare, requiredPermission: "tasks.view" },
+  { to: "/invoices", label: "Invoices", icon: Receipt, requiredPermission: "invoices.view" },
+  { to: "/settings", label: "Settings", icon: Settings, requiredPermission: "settings.view" },
 ];
 
 import { usePathname } from "next/navigation";
@@ -33,6 +36,14 @@ import { usePathname } from "next/navigation";
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname() || "";
+  const { can } = usePermissions();
+
+  const filteredNavItems = navItems.filter((item) => {
+    if (item.requiredPermission) {
+      return can(item.requiredPermission);
+    }
+    return true; // if no permission required, always show
+  });
 
   return (
     <aside
@@ -52,7 +63,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 p-2">
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const active = item.exact
             ? pathname === item.to

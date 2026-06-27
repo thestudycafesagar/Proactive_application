@@ -22,7 +22,10 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   await mutex.waitForUnlock();
   let result = await baseQuery(args, api, extraOptions);
 
-  if (result.error && result.error.status === 401) {
+  const url = typeof args === "string" ? args : args.url;
+  const isAuthEndpoint = url?.includes("/auth/login") || url?.includes("/auth/refresh");
+
+  if (result.error && result.error.status === 401 && !isAuthEndpoint) {
     // checking whether the mutex is locked
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
@@ -110,6 +113,13 @@ export const applicationApi = createApi({
       providesTags: ["Task"],
       transformResponse: (response: { data: any }) => response.data,
     }),
+    
+    getTags: builder.query({
+      query: () => "/tasks/tags/all",
+      providesTags: ["Task"],
+      transformResponse: (response: { data: string[] }) => response.data,
+    }),
+
     createTask: builder.mutation({
       query: (taskData) => ({
         url: "/tasks",
@@ -123,7 +133,7 @@ export const applicationApi = createApi({
       query: ({ id, status }) => ({
         url: `/tasks/${id}/status`,
         method: "PATCH",
-        body: { status },
+        body: { status }, 
       }),
       invalidatesTags: ["Task"],
       transformResponse: (response: { data: any }) => response.data,
@@ -134,6 +144,28 @@ export const applicationApi = createApi({
       query: (params) => ({ url: "/clients", params }),
       providesTags: ["Client"],
       transformResponse: (response: { data: any }) => response.data,
+    }),
+    getClientById: builder.query({
+      query: (id) => `/clients/${id}`,
+      providesTags: (result, error, id) => [{ type: "Client", id }],
+      transformResponse: (response: { data: any }) => response.data,
+    }),
+    createClient: builder.mutation({
+      query: (clientData) => ({
+        url: "/clients",
+        method: "POST",
+        body: clientData,
+      }),
+      invalidatesTags: ["Client"],
+      transformResponse: (response: { data: any }) => response.data,
+    }),
+    uploadClientPhoto: builder.mutation({
+      query: (formData) => ({
+        url: "/clients/upload-photo",
+        method: "POST",
+        body: formData,
+      }),
+      transformResponse: (response: { data: { photoUrl: string } }) => response.data,
     }),
 
     // Services
@@ -159,9 +191,13 @@ export const {
   useGetMeQuery,
   useUploadAvatarMutation,
   useGetTasksQuery,
+  useGetTagsQuery,
   useCreateTaskMutation,
   useUpdateTaskStatusMutation,
   useGetClientsQuery,
+  useGetClientByIdQuery,
+  useCreateClientMutation,
+  useUploadClientPhotoMutation,
   useGetServicesQuery,
   useGetUsersQuery,
 } = applicationApi;

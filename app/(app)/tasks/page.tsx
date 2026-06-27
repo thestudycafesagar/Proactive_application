@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Clock, CheckCircle2, Circle, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Clock, Circle, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -11,26 +10,90 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { StatusBadge } from "@/components/shared/StatusBadge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { useGetTasksQuery, useUpdateTaskStatusMutation } from "@/lib/services/api";
 import { type Task, type TaskStatus, type TaskPriority } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { TaskToolbar } from "./TaskToolbar";
+import { TasksTable } from "./TasksTable";
 
 const COLUMNS: TaskStatus[] = [
   "Pending",
   "In Progress",
   "Under Review",
+  "On Hold",
   "Completed",
 ];
 
+const getPriorityColor = (priority: TaskPriority) => {
+  switch (priority) {
+    case "Urgent": return "bg-red-500";
+    case "High": return "bg-orange-500";
+    case "Medium": return "bg-blue-500";
+    case "Low": return "bg-slate-400";
+    default: return "bg-slate-400";
+  }
+};
+
+const getPriorityBadge = (priority: TaskPriority) => {
+  switch (priority) {
+    case "Urgent": return "bg-red-50 text-red-700 border-red-200";
+    case "High": return "bg-orange-50 text-orange-700 border-orange-200";
+    case "Medium": return "bg-blue-50 text-blue-700 border-blue-200";
+    case "Low": return "bg-slate-50 text-slate-700 border-slate-200";
+    default: return "bg-slate-50 text-slate-700 border-slate-200";
+  }
+};
+
+const getColumnDot = (status: TaskStatus) => {
+  switch (status) {
+    case "Pending": return "bg-slate-400";
+    case "In Progress": return "bg-blue-500";
+    case "Under Review": return "bg-purple-500";
+    case "On Hold": return "bg-amber-500";
+    case "Completed": return "bg-emerald-500";
+    default: return "bg-slate-400";
+  }
+};
+
 export default function TasksPage() {
-  const { data: tasksRes, isLoading } = useGetTasksQuery(undefined);
+  const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban");
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("dueDate");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [dueFilter, setDueFilter] = useState<"all" | "today" | "overdue">("all");
+  const [filterClient, setFilterClient] = useState<"all" | string>("all");
+  const [page, setPage] = useState(1);
+  const [visibleColumns, setVisibleColumns] = useState<TaskStatus[]>([
+    "Pending",
+    "In Progress",
+    "On Hold",
+    "Completed",
+  ]);
+  
+  const { data: tasksRes, isLoading } = useGetTasksQuery({ 
+    limit: 20, 
+    page,
+    dueStatus: dueFilter === "all" ? undefined : dueFilter,
+    search: search || undefined,
+    clientId: filterClient === "all" ? undefined : filterClient,
+    sortBy,
+    sortOrder
+  });
   const [updateStatus] = useUpdateTaskStatusMutation();
   
   const [detail, setDetail] = useState<Task | null>(null);
 
-  const tasks: Task[] = tasksRes?.data || [];
+  const tasks: Task[] = tasksRes?.tasks || [];
 
   const grouped = useMemo(() => {
     return COLUMNS.reduce(
@@ -59,7 +122,6 @@ export default function TasksPage() {
     const taskId = e.dataTransfer.getData("taskId");
     if (!taskId) return;
     
-    // Optionally update local cache optimistically, but RTK Query will refetch if invalidated
     try {
       await updateStatus({ id: taskId, status: newStatus }).unwrap();
     } catch (err) {
@@ -73,34 +135,63 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
-          <p className="text-sm text-muted-foreground">
-            Drag and drop tasks between columns.
-          </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Tabs value={dueFilter} onValueChange={(v) => setDueFilter(v as any)}>
+            <TabsList className="grid w-[300px] grid-cols-3">
+              <TabsTrigger value="all">All Tasks</TabsTrigger>
+              <TabsTrigger value="today">Due Today</TabsTrigger>
+              <TabsTrigger value="overdue">Overdue</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-        <CreateTaskDialog />
+        
+        <div className="flex items-center gap-3">
+          <CreateTaskDialog />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {COLUMNS.map((col) => (
+      <TaskToolbar
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        search={search}
+        setSearch={setSearch}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
+        visibleColumns={visibleColumns}
+        setVisibleColumns={setVisibleColumns}
+        allColumns={COLUMNS}
+        filterClient={filterClient}
+        setFilterClient={setFilterClient}
+      />
+
+      {viewMode === "table" ? (
+        <TasksTable tasks={tasks} onTaskClick={setDetail} />
+      ) : (
+        <div className="flex overflow-x-auto gap-5 pb-4 snap-x">
+        {COLUMNS.filter(c => visibleColumns.includes(c)).map((col) => (
           <div 
             key={col} 
-            className="rounded-xl border bg-muted/40 p-3 flex flex-col min-h-[500px]"
+            className="rounded-xl border bg-slate-50/50 p-4 flex flex-col min-h-[500px] min-w-[200px] w-full max-w-[280px] flex-shrink-0 snap-start"
             onDrop={(e) => handleDrop(e, col)}
             onDragOver={handleDragOver}
           >
-            <div className="mb-3 flex items-center justify-between px-1">
-              <h3 className="text-sm font-semibold">{col}</h3>
-              <span className="rounded-full bg-card px-2 py-0.5 text-xs text-muted-foreground">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className={`h-2.5 w-2.5 rounded-full ${getColumnDot(col)}`} />
+                <h3 className="text-sm font-semibold tracking-tight">{col}</h3>
+              </div>
+              <span className="rounded-full bg-slate-200/50 px-2.5 py-0.5 text-xs font-medium text-slate-600">
                 {grouped[col].length}
               </span>
             </div>
-            <div className="space-y-2 flex-1">
+            
+            <div className="space-y-3 flex-1">
               {grouped[col].length === 0 ? (
-                <div className="rounded-md border border-dashed bg-card/50 px-3 py-8 text-center text-xs text-muted-foreground">
-                  No tasks
+                <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white/50 text-sm text-slate-400">
+                  Drop tasks here
                 </div>
               ) : (
                 grouped[col].map((t) => (
@@ -109,28 +200,54 @@ export default function TasksPage() {
                     draggable
                     onDragStart={(e) => handleDragStart(e, t._id)}
                     onClick={() => setDetail(t)}
-                    className="w-full cursor-pointer rounded-lg border bg-card p-3 text-left shadow-sm transition-shadow hover:shadow-md"
+                    className="group relative w-full cursor-pointer overflow-hidden rounded-lg border bg-white p-4 text-left shadow-sm transition-all hover:shadow-md hover:border-slate-300"
                   >
-                    <div className="mb-2 flex items-start justify-between gap-2">
-                      <span className="font-medium text-sm leading-tight">
-                        {t.title}
+                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${getPriorityColor(t.priority)}`} />
+                    
+                    <div className="mb-2.5 pl-1.5 flex items-start justify-between gap-2">
+                      <span className="font-medium text-sm text-slate-900 leading-snug line-clamp-2">
+                        {t.serviceId?.name || "Unnamed Task"}
                       </span>
                     </div>
-                    <div className="text-xs text-muted-foreground mb-3">
-                      {t.clientId?.name || "No Client"}
+                    
+                    <div className="pl-1.5 mb-4 flex items-center gap-1.5 text-xs text-slate-500">
+                      <Circle className="h-3 w-3" />
+                      <span className="truncate">{t.clientId?.name || "No Client"}</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex gap-1.5">
-                        <StatusBadge status={t.priority} />
+                    
+                    <div className="pl-1.5 flex flex-wrap items-center justify-between mt-auto gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className={`px-1.5 py-0 font-medium text-[10px] uppercase tracking-wider ${getPriorityBadge(t.priority)}`}>
+                          {t.priority}
+                        </Badge>
                         {t.dueDate && (
-                          <Badge variant="outline" className="text-xs text-muted-foreground font-normal">
-                            Due {formatDate(t.dueDate)}
-                          </Badge>
+                          <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 shadow-sm">
+                            <Clock className="h-3 w-3 text-slate-400" />
+                            {formatDate(t.dueDate)}
+                          </div>
                         )}
                       </div>
-                      {/* Avatar placeholder for assignee */}
-                      <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium border border-background">
-                        {t.assignedUserId?.name?.charAt(0) || "?"}
+                      
+                      <div className="flex items-center">
+                        {t.assigneeIds && t.assigneeIds.length > 0 ? (
+                          t.assigneeIds.map((assignee, idx) => (
+                            <div 
+                              key={assignee._id}
+                              className="h-6 w-6 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-medium text-white shadow-sm ring-2 ring-white"
+                              title={assignee.name}
+                              style={{ marginLeft: idx > 0 ? '-0.5rem' : '0' }}
+                            >
+                              {assignee.name?.charAt(0).toUpperCase()}
+                            </div>
+                          ))
+                        ) : (
+                          <div 
+                            className="h-6 w-6 rounded-full bg-slate-300 flex items-center justify-center text-[10px] font-medium text-white shadow-sm ring-2 ring-white"
+                            title="Unassigned"
+                          >
+                            ?
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -140,6 +257,37 @@ export default function TasksPage() {
           </div>
         ))}
       </div>
+      )}
+
+      {tasksRes?.pagination && tasksRes.pagination.pages > 1 && (
+        <Pagination className="mt-6 mb-2 border-t pt-4">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (page > 1) setPage(p => p - 1);
+                }}
+                className={page === 1 ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+            <PaginationItem className="px-4 text-sm font-medium text-slate-600">
+              Page {page} of {tasksRes.pagination.pages}
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (page < tasksRes.pagination.pages) setPage(p => p + 1);
+                }}
+                className={page === tasksRes.pagination.pages ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
 
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         {detail && (
@@ -175,7 +323,7 @@ function TaskDetailDialog({
   return (
     <DialogContent className="sm:max-w-lg">
       <DialogHeader>
-        <DialogTitle>{task.title}</DialogTitle>
+        <DialogTitle>{task.serviceId?.name || "Unnamed Task"}</DialogTitle>
         <DialogDescription>
           {task.clientId?.name || "No Client"} 
           {task.dueDate ? ` · Due ${formatDate(task.dueDate)}` : ""}

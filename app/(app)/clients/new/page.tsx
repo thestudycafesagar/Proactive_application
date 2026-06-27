@@ -93,6 +93,146 @@ export default function NewClientPage() {
   // Errors
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const handlePanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (val.length > 10) val = val.slice(0, 10);
+    
+    let formatted = "";
+    for (let i = 0; i < val.length; i++) {
+      const char = val[i];
+      if (i < 5) {
+        if (/[A-Z]/.test(char)) formatted += char;
+        else break;
+      } else if (i < 9) {
+        if (/[0-9]/.test(char)) formatted += char;
+        else break;
+      } else if (i === 9) {
+        if (/[A-Z]/.test(char)) formatted += char;
+        else break;
+      }
+    }
+    setPan(formatted);
+    // Clear error immediately if it becomes valid while typing
+    if (formatted.length === 10 && /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(formatted)) {
+      setErrors(prev => {
+        const e = { ...prev };
+        delete e.pan;
+        return e;
+      });
+    }
+  };
+
+  const handlePanBlur = () => {
+    if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) {
+      setErrors(prev => ({ ...prev, pan: "Incomplete or invalid PAN format" }));
+    }
+  };
+
+  const handleGstinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (val.length > 15) val = val.slice(0, 15);
+    
+    let formatted = "";
+    for (let i = 0; i < val.length; i++) {
+      const char = val[i];
+      if (i < 2) {
+        if (/[0-9]/.test(char)) formatted += char;
+        else break;
+      } else if (i < 7) {
+        if (/[A-Z]/.test(char)) formatted += char;
+        else break;
+      } else if (i < 11) {
+        if (/[0-9]/.test(char)) formatted += char;
+        else break;
+      } else if (i === 11) {
+        if (/[A-Z]/.test(char)) formatted += char;
+        else break;
+      } else if (i === 12) {
+        if (/[A-Z0-9]/.test(char)) formatted += char;
+        else break;
+      } else if (i === 13) {
+        if (/[A-Z]/.test(char)) formatted += char;
+        else break;
+      } else if (i === 14) {
+        if (/[A-Z0-9]/.test(char)) formatted += char;
+        else break;
+      }
+    }
+    setGstin(formatted);
+    // Clear error immediately if it becomes valid while typing
+    if (formatted.length === 15 && /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][A-Z0-9][A-Z][A-Z0-9]$/.test(formatted)) {
+      setErrors(prev => {
+        const e = { ...prev };
+        delete e.gstin;
+        return e;
+      });
+    }
+  };
+
+  const handleGstinBlur = () => {
+    if (gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][A-Z0-9][A-Z][A-Z0-9]$/.test(gstin)) {
+      setErrors(prev => ({ ...prev, gstin: "Incomplete or invalid GSTIN format" }));
+    }
+  };
+
+  const handleMobileChange = (setter: React.Dispatch<React.SetStateAction<string>>, fieldName: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, "");
+    if (val.length > 10) val = val.slice(0, 10);
+    setter(val);
+    
+    if (val.length === 10) {
+      setErrors(prev => {
+        const err = { ...prev };
+        delete err[fieldName];
+        return err;
+      });
+    }
+  };
+
+  const handleMobileBlur = (val: string, fieldName: string) => () => {
+    if (val && val.length !== 10) {
+      setErrors(prev => ({ ...prev, [fieldName]: "Must be exactly 10 digits" }));
+    }
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setEmail(val);
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+      setErrors(prev => {
+        const err = { ...prev };
+        delete err.email;
+        return err;
+      });
+    }
+  };
+
+  const handleEmailBlur = () => {
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setErrors(prev => ({ ...prev, email: "Invalid email format" }));
+    }
+  };
+
+  const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, "");
+    if (val.length > 6) val = val.slice(0, 6);
+    setPincode(val);
+    
+    if (val.length === 6) {
+      setErrors(prev => {
+        const err = { ...prev };
+        delete err.pincode;
+        return err;
+      });
+    }
+  };
+
+  const handlePincodeBlur = () => {
+    if (pincode && pincode.length !== 6) {
+      setErrors(prev => ({ ...prev, pincode: "Pincode must be exactly 6 digits" }));
+    }
+  };
+
   const handlePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -125,13 +265,29 @@ export default function NewClientPage() {
     setTags((prev) => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
   };
 
+  const checkIsValid = () => {
+    if (!name.trim()) return false;
+    if (!clientType) return false;
+    if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) return false;
+    if (gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][A-Z0-9][A-Z][A-Z0-9]$/.test(gstin)) return false;
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
+    if (mobile && mobile.length !== 10) return false;
+    if (mobile2 && mobile2.length !== 10) return false;
+    if (pincode && !/^[0-9]{6}$/.test(pincode)) return false;
+    return true;
+  };
+
+  const isValid = checkIsValid();
+
   const validate = () => {
     const e: Record<string, string> = {};
     if (!name.trim()) e.name = "Client name is required";
     if (!clientType) e.clientType = "Client type is required";
     if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) e.pan = "Invalid PAN format";
+    if (gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][A-Z0-9][A-Z][A-Z0-9]$/.test(gstin)) e.gstin = "Invalid GSTIN format";
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Invalid email";
-    if (mobile && !/^[0-9]{10}$/.test(mobile)) e.mobile = "Mobile must be 10 digits";
+    if (mobile && mobile.length !== 10) e.mobile = "Must be 10 digits";
+    if (mobile2 && mobile2.length !== 10) e.secondaryMobile = "Must be 10 digits";
     if (pincode && !/^[0-9]{6}$/.test(pincode)) e.pincode = "Pincode must be 6 digits";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -180,9 +336,10 @@ export default function NewClientPage() {
   const initials = name.trim().split(/\s+/).map(p => p[0]).slice(0, 2).join("").toUpperCase() || "C";
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b">
+    <div className="w-full pb-10">
+      <form onSubmit={onSubmit} className="space-y-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b">
         <div className="flex items-center gap-4">
           <Button asChild variant="outline" size="icon" className="h-9 w-9 shrink-0">
             <Link href="/clients"><ArrowLeft className="h-4 w-4" /></Link>
@@ -196,7 +353,7 @@ export default function NewClientPage() {
         </div>
         <div className="flex items-center gap-3">
           <Button asChild variant="ghost"><Link href="/clients">Cancel</Link></Button>
-          <Button type="submit" disabled={isCreating || isUploadingPhoto} className="gap-2">
+          <Button type="submit" disabled={!isValid || isCreating || isUploadingPhoto} className="gap-2">
             {isCreating && <Loader2 className="h-4 w-4 animate-spin" />}
             Save Client
           </Button>
@@ -204,7 +361,7 @@ export default function NewClientPage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
         
         {/* LEFT COLUMN: Main Form */}
         <div className="xl:col-span-2 space-y-8">
@@ -240,11 +397,25 @@ export default function NewClientPage() {
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="PAN Number" error={errors.pan} hint="Format: ABCDE1234F">
-                  <Input value={pan} onChange={(e) => setPan(e.target.value.toUpperCase())} maxLength={10} placeholder="ABCDE1234F" />
+                <Field label="PAN Number" error={errors.pan}>
+                  <Input 
+                    value={pan} 
+                    onChange={handlePanChange} 
+                    onBlur={handlePanBlur}
+                    maxLength={10} 
+                    placeholder="ABCDE1234F" 
+                    className={errors.pan ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
                 </Field>
-                <Field label="GSTIN">
-                  <Input value={gstin} onChange={(e) => setGstin(e.target.value.toUpperCase())} maxLength={15} placeholder="22ABCDE1234F1Z5" />
+                <Field label="GSTIN" error={errors.gstin}>
+                  <Input 
+                    value={gstin} 
+                    onChange={handleGstinChange} 
+                    onBlur={handleGstinBlur}
+                    maxLength={15} 
+                    placeholder="22ABCDE1234F1Z5" 
+                    className={errors.gstin ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
                 </Field>
               </CardContent>
             </Card>
@@ -260,17 +431,44 @@ export default function NewClientPage() {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Field label="Mobile Number" error={errors.mobile}>
-                    <Input value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))} maxLength={10} placeholder="10-digit mobile" />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">+91</span>
+                      <Input 
+                        value={mobile} 
+                        onChange={handleMobileChange(setMobile, 'mobile')} 
+                        onBlur={handleMobileBlur(mobile, 'mobile')}
+                        maxLength={10} 
+                        placeholder="9876543210" 
+                        className={`pl-10 ${errors.mobile ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      />
+                    </div>
                   </Field>
-                  <Field label="Secondary Mobile">
-                    <Input value={mobile2} onChange={(e) => setMobile2(e.target.value.replace(/\D/g, ""))} maxLength={10} placeholder="Optional" />
+                  <Field label="Secondary Mobile" error={errors.secondaryMobile}>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">+91</span>
+                      <Input 
+                        value={mobile2} 
+                        onChange={handleMobileChange(setMobile2, 'secondaryMobile')} 
+                        onBlur={handleMobileBlur(mobile2, 'secondaryMobile')}
+                        maxLength={10} 
+                        placeholder="Optional" 
+                        className={`pl-10 ${errors.secondaryMobile ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      />
+                    </div>
                   </Field>
                 </div>
                 <Separator />
                 <Field label="Email Address" error={errors.email}>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="client@example.com" className="pl-9" />
+                    <Input 
+                      type="email" 
+                      value={email} 
+                      onChange={handleEmailChange} 
+                      onBlur={handleEmailBlur}
+                      placeholder="client@example.com" 
+                      className={`pl-9 ${errors.email ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    />
                   </div>
                 </Field>
               </CardContent>
@@ -294,7 +492,14 @@ export default function NewClientPage() {
                   <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Jaipur" />
                 </Field>
                 <Field label="Pincode" error={errors.pincode}>
-                  <Input value={pincode} onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))} maxLength={6} placeholder="6-digit pincode" />
+                  <Input 
+                    value={pincode} 
+                    onChange={handlePincodeChange} 
+                    onBlur={handlePincodeBlur}
+                    maxLength={6} 
+                    placeholder="6-digit pincode" 
+                    className={errors.pincode ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
                 </Field>
                 <div className="md:col-span-2">
                   <Field label="State">
@@ -482,7 +687,8 @@ export default function NewClientPage() {
 
           </div>
         </div>
-    </form>
+      </form>
+    </div>
   );
 }
 

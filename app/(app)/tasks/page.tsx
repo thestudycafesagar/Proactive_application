@@ -71,7 +71,7 @@ export default function TasksPage() {
   const [sortBy, setSortBy] = useState("dueDate");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [dueFilter, setDueFilter] = useState<"all" | "today" | "overdue">("all");
-  const [filterClient, setFilterClient] = useState<"all" | string>("all");
+  const [filterClient, setFilterClient] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [visibleColumns, setVisibleColumns] = useState<TaskStatus[]>([
     "Pending",
@@ -79,13 +79,16 @@ export default function TasksPage() {
     "On Hold",
     "Completed",
   ]);
+  const [tableVisibleColumns, setTableVisibleColumns] = useState<string[]>([
+    "assignee", "title", "client", "priority", "status", "dueDate"
+  ]);
   
   const { data: tasksRes, isLoading } = useGetTasksQuery({ 
     limit: 20, 
     page,
     dueStatus: dueFilter === "all" ? undefined : dueFilter,
     search: search || undefined,
-    clientId: filterClient === "all" ? undefined : filterClient,
+    clientId: filterClient.length === 0 ? undefined : filterClient.join(','),
     sortBy,
     sortOrder
   });
@@ -165,10 +168,12 @@ export default function TasksPage() {
         allColumns={COLUMNS}
         filterClient={filterClient}
         setFilterClient={setFilterClient}
+        tableVisibleColumns={tableVisibleColumns}
+        setTableVisibleColumns={setTableVisibleColumns}
       />
 
       {viewMode === "table" ? (
-        <TasksTable tasks={tasks} onTaskClick={setDetail} />
+        <TasksTable tasks={tasks} onTaskClick={setDetail} visibleColumns={tableVisibleColumns as any} />
       ) : (
         <div className="flex overflow-x-auto gap-5 pb-4 snap-x">
         {COLUMNS.filter(c => visibleColumns.includes(c)).map((col) => (

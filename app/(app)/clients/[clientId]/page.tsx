@@ -3,15 +3,35 @@
 import Link from "next/link";
 import { useParams, notFound } from "next/navigation";
 
-import { ArrowLeft, Mail, Phone, FileText, Building2 } from "lucide-react";
-import { mockClients, mockTasks, mockInvoices } from "@/lib/mock-data";
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  FileText,
+  Building2,
+  Package as PackageIcon,
+  Loader2,
+} from "lucide-react";
+import { mockTasks, mockInvoices } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useGetClientByIdQuery } from "@/lib/services/api";
+import { SubscribeDialog } from "./SubscribeDialog";
 
 export default function ClientDetailPage() {
   const params = useParams();
   const clientId = params?.clientId as string;
-  const client = mockClients.find((c) => c.id === clientId);
+  const { data: response, isLoading } = useGetClientByIdQuery(clientId);
+  const client = response;
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   if (!client) throw notFound();
 
   const clientTasks = mockTasks.filter((t) => t.clientId === client.id);
@@ -44,12 +64,12 @@ export default function ClientDetailPage() {
               <Badge
                 variant="outline"
                 className={
-                  client.status === "Active"
+                  client.isActive
                     ? "border-success/30 bg-success/10 text-success"
                     : "border-border bg-muted text-muted-foreground"
                 }
               >
-                {client.status}
+                {client.isActive ? "Active" : "Disabled"}
               </Badge>
             </div>
           </div>
@@ -63,18 +83,19 @@ export default function ClientDetailPage() {
           <TabsTrigger value="invoices">
             Invoices ({clientInvoices.length})
           </TabsTrigger>
+          <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
         </TabsList>
 
         <TabsContent
           value="profile"
           className="grid grid-cols-1 gap-4 md:grid-cols-2"
         >
-          <InfoCard label="Email" value={client.email} icon={Mail} />
-          <InfoCard label="Phone" value={client.phone} icon={Phone} />
-          <InfoCard label="PAN" value={client.pan ?? "—"} icon={FileText} />
+          <InfoCard label="Email" value={client.email || "—"} icon={Mail} />
+          <InfoCard label="Phone" value={client.mobile || "—"} icon={Phone} />
+          <InfoCard label="PAN" value={client.pan || "—"} icon={FileText} />
           <InfoCard
             label="GSTIN"
-            value={client.gstin ?? "—"}
+            value={client.gstin || "—"}
             icon={Building2}
           />
         </TabsContent>
@@ -138,6 +159,105 @@ export default function ClientDetailPage() {
               ))}
             </ul>
           )}
+        </TabsContent>
+        <TabsContent value="subscriptions" className="space-y-4">
+          <div className="rounded-xl border bg-card shadow-sm">
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <div>
+                <h3 className="text-lg font-medium">Subscriptions</h3>
+                <p className="text-sm text-muted-foreground">
+                  Manage this client's commercial packages and individual
+                  services.
+                </p>
+              </div>
+              <SubscribeDialog clientId={clientId} />
+            </div>
+
+            {(!client.subscribedPackages ||
+              client.subscribedPackages.length === 0) &&
+            (!client.subscribedServices ||
+              client.subscribedServices.length === 0) ? (
+              <div className="px-6 py-12 text-center text-sm text-muted-foreground flex flex-col items-center justify-center gap-3">
+                <PackageIcon className="h-10 w-10 text-muted-foreground/50" />
+                <p>No active subscriptions.</p>
+              </div>
+            ) : (
+              <ul className="divide-y">
+                {client.subscribedPackages?.map((sub: any, idx: number) => (
+                  <li
+                    key={`pkg-${idx}`}
+                    className="flex items-center justify-between px-5 py-4 hover:bg-muted/50"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1 bg-primary/10 p-2 rounded-lg text-primary">
+                        <PackageIcon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">
+                          Package Subscription
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Subscribed on:{" "}
+                          {new Date(sub.subscribedAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge
+                        variant="outline"
+                        className="bg-success/10 text-success border-success/20 font-normal"
+                      >
+                        Active Package
+                      </Badge>
+                      {sub.customPrice !== undefined && (
+                        <span className="text-sm font-semibold">
+                          ₹{sub.customPrice.toLocaleString("en-IN")}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+
+                {client.subscribedServices?.map((sub: any, idx: number) => (
+                  <li
+                    key={`svc-${idx}`}
+                    className="flex items-center justify-between px-5 py-4 hover:bg-muted/50"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1 bg-blue-100 p-2 rounded-lg text-blue-700">
+                        <FileText className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">
+                          {sub.serviceId?.name || "Service Subscription"}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Subscribed on:{" "}
+                          {new Date(sub.subscribedAt).toLocaleDateString()}
+                          {sub.serviceId?.isRecurring
+                            ? ` · ${sub.serviceId.frequency?.type?.replace("_", " ")}`
+                            : " · One-time"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge
+                        variant="outline"
+                        className="bg-success/10 text-success border-success/20 font-normal"
+                      >
+                        Active Service
+                      </Badge>
+                      {sub.customPrice !== undefined && (
+                        <span className="text-sm font-semibold">
+                          ₹{sub.customPrice.toLocaleString("en-IN")}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>

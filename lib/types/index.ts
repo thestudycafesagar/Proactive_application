@@ -1,4 +1,10 @@
-export type TaskStatus = "Pending" | "In Progress" | "Under Review" | "On Hold" | "Completed" | "Cancelled";
+export type TaskStatus =
+  | "Pending"
+  | "In Progress"
+  | "Under Review"
+  | "On Hold"
+  | "Completed"
+  | "Cancelled";
 export type TaskPriority = "Low" | "Medium" | "High" | "Urgent";
 
 export interface User {

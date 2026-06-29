@@ -70,11 +70,14 @@ export function CreateTaskDialog() {
   const [docCollectionRequest, setDocCollectionRequest] = useState(false);
   const [docCollectionMessage, setDocCollectionMessage] = useState("");
 
-  const { data: clientsRes, isLoading: clientsLoading } = useGetClientsQuery(undefined);
-  const { data: servicesRes, isLoading: servicesLoading } = useGetServicesQuery(undefined);
-  const { data: usersRes, isLoading: usersLoading } = useGetUsersQuery(undefined);
+  const { data: clientsRes, isLoading: clientsLoading } =
+    useGetClientsQuery(undefined);
+  const { data: servicesRes, isLoading: servicesLoading } =
+    useGetServicesQuery(undefined);
+  const { data: usersRes, isLoading: usersLoading } =
+    useGetUsersQuery(undefined);
   const { data: existingTags = [] } = useGetTagsQuery(undefined);
-  
+
   const [createTask, { isLoading: isCreating }] = useCreateTaskMutation();
 
   const clients = clientsRes?.clients || [];
@@ -94,12 +97,15 @@ export function CreateTaskDialog() {
         dueDate: dueDate || undefined,
         targetDate: targetDate || undefined,
         isBillable,
-        billableAmount: isBillable && billableAmount ? Number(billableAmount) : undefined,
+        billableAmount:
+          isBillable && billableAmount ? Number(billableAmount) : undefined,
         tags: selectedTags.length > 0 ? selectedTags : undefined,
         docCollectionRequest,
-        docCollectionMessage: docCollectionRequest ? docCollectionMessage : undefined
+        docCollectionMessage: docCollectionRequest
+          ? docCollectionMessage
+          : undefined,
       }).unwrap();
-      
+
       setOpen(false);
       resetForm();
     } catch (err) {
@@ -123,13 +129,18 @@ export function CreateTaskDialog() {
     setDocCollectionMessage("");
   };
 
-  const availableTags = existingTags.filter((t: string) => !selectedTags.includes(t));
+  const availableTags = existingTags.filter(
+    (t: string) => !selectedTags.includes(t),
+  );
 
   return (
-    <Dialog open={open} onOpenChange={(val) => {
-      setOpen(val);
-      if (!val) resetForm();
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(val) => {
+        setOpen(val);
+        if (!val) resetForm();
+      }}
+    >
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
@@ -143,10 +154,16 @@ export function CreateTaskDialog() {
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label>Client <span className="text-red-500">*</span></Label>
+              <Label>
+                Client <span className="text-red-500">*</span>
+              </Label>
               <Select value={clientId} onValueChange={setClientId}>
                 <SelectTrigger>
-                  <SelectValue placeholder={clientsLoading ? "Loading..." : "Select Client"} />
+                  <SelectValue
+                    placeholder={
+                      clientsLoading ? "Loading..." : "Select Client"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {clients.map((client: any) => (
@@ -157,12 +174,18 @@ export function CreateTaskDialog() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="grid gap-2">
-              <Label>Service <span className="text-red-500">*</span></Label>
+              <Label>
+                Service <span className="text-red-500">*</span>
+              </Label>
               <Select value={serviceId} onValueChange={setServiceId}>
                 <SelectTrigger>
-                  <SelectValue placeholder={servicesLoading ? "Loading..." : "Select Service"} />
+                  <SelectValue
+                    placeholder={
+                      servicesLoading ? "Loading..." : "Select Service"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {services.map((service: any) => (
@@ -177,11 +200,18 @@ export function CreateTaskDialog() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label>Assignees <span className="text-red-500">*</span></Label>
+              <Label>
+                Assignees <span className="text-red-500">*</span>
+              </Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start font-normal">
-                    {assigneeIds.length === 0 ? "Select Assignees" : `${assigneeIds.length} Assignee(s) Selected`}
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start font-normal"
+                  >
+                    {assigneeIds.length === 0
+                      ? "Select Assignees"
+                      : `${assigneeIds.length} Assignee(s) Selected`}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-[260px]">
@@ -193,7 +223,9 @@ export function CreateTaskDialog() {
                         if (checked) {
                           setAssigneeIds([...assigneeIds, user._id]);
                         } else {
-                          setAssigneeIds(assigneeIds.filter(id => id !== user._id));
+                          setAssigneeIds(
+                            assigneeIds.filter((id) => id !== user._id),
+                          );
                         }
                       }}
                     >
@@ -206,7 +238,10 @@ export function CreateTaskDialog() {
 
             <div className="grid gap-2">
               <Label>Priority</Label>
-              <Select value={priority} onValueChange={(val) => setPriority(val as TaskPriority)}>
+              <Select
+                value={priority}
+                onValueChange={(val) => setPriority(val as TaskPriority)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -223,18 +258,18 @@ export function CreateTaskDialog() {
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label>Due Date (Optional)</Label>
-              <Input 
-                type="date" 
-                value={dueDate} 
-                onChange={e => setDueDate(e.target.value)} 
+              <Input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
               <Label>Target Date (Optional)</Label>
-              <Input 
-                type="date" 
-                value={targetDate} 
-                onChange={e => setTargetDate(e.target.value)} 
+              <Input
+                type="date"
+                value={targetDate}
+                onChange={(e) => setTargetDate(e.target.value)}
               />
             </div>
           </div>
@@ -247,11 +282,11 @@ export function CreateTaskDialog() {
             {isBillable && (
               <div className="grid gap-2 mt-2">
                 <Label>Billable Amount</Label>
-                <Input 
-                  type="number" 
-                  placeholder="e.g. 5000" 
-                  value={billableAmount} 
-                  onChange={e => setBillableAmount(e.target.value)} 
+                <Input
+                  type="number"
+                  placeholder="e.g. 5000"
+                  value={billableAmount}
+                  onChange={(e) => setBillableAmount(e.target.value)}
                 />
               </div>
             )}
@@ -260,15 +295,18 @@ export function CreateTaskDialog() {
           <div className="grid gap-2 border p-3 rounded-md bg-slate-50/50 dark:bg-slate-900/50">
             <div className="flex items-center justify-between">
               <Label>Create Doc. Collection Request</Label>
-              <Switch checked={docCollectionRequest} onCheckedChange={setDocCollectionRequest} />
+              <Switch
+                checked={docCollectionRequest}
+                onCheckedChange={setDocCollectionRequest}
+              />
             </div>
             {docCollectionRequest && (
               <div className="grid gap-2 mt-2">
                 <Label>Doc. Collection Request Message</Label>
-                <Textarea 
-                  placeholder="Message to the client..." 
-                  value={docCollectionMessage} 
-                  onChange={e => setDocCollectionMessage(e.target.value)} 
+                <Textarea
+                  placeholder="Message to the client..."
+                  value={docCollectionMessage}
+                  onChange={(e) => setDocCollectionMessage(e.target.value)}
                 />
               </div>
             )}
@@ -278,43 +316,60 @@ export function CreateTaskDialog() {
             <Label>Tags (Optional)</Label>
             <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
               <PopoverTrigger asChild>
-                <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px] items-center cursor-text bg-background" onClick={() => setTagPopoverOpen(true)}>
-                  {selectedTags.map(tag => (
-                    <Badge key={tag} variant="secondary" className="gap-1 px-2 py-0.5 rounded-full font-normal">
+                <div
+                  className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px] items-center cursor-text bg-background"
+                  onClick={() => setTagPopoverOpen(true)}
+                >
+                  {selectedTags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="gap-1 px-2 py-0.5 rounded-full font-normal"
+                    >
                       {tag}
-                      <X 
-                        className="h-3 w-3 cursor-pointer opacity-70 hover:opacity-100" 
+                      <X
+                        className="h-3 w-3 cursor-pointer opacity-70 hover:opacity-100"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedTags(selectedTags.filter(t => t !== tag));
+                          setSelectedTags(
+                            selectedTags.filter((t) => t !== tag),
+                          );
                         }}
                       />
                     </Badge>
                   ))}
-                  {selectedTags.length === 0 && <span className="text-muted-foreground text-sm pl-1">Select or create tags...</span>}
+                  {selectedTags.length === 0 && (
+                    <span className="text-muted-foreground text-sm pl-1">
+                      Select or create tags...
+                    </span>
+                  )}
                 </div>
               </PopoverTrigger>
               <PopoverContent className="w-[300px] p-0" align="start">
                 <Command>
-                  <CommandInput 
-                    placeholder="Search or create a tag..." 
+                  <CommandInput
+                    placeholder="Search or create a tag..."
                     value={tagInput}
                     onValueChange={setTagInput}
                   />
                   <CommandList>
                     <CommandEmpty>
                       {tagInput ? (
-                        <div 
+                        <div
                           className="px-4 py-2 text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
                           onClick={() => {
                             if (!selectedTags.includes(tagInput.trim())) {
-                              setSelectedTags([...selectedTags, tagInput.trim()]);
+                              setSelectedTags([
+                                ...selectedTags,
+                                tagInput.trim(),
+                              ]);
                             }
                             setTagInput("");
                             setTagPopoverOpen(false);
                           }}
                         >
-                          Create tag &quot;<span className="font-medium">{tagInput}</span>&quot;
+                          Create tag &quot;
+                          <span className="font-medium">{tagInput}</span>&quot;
                         </div>
                       ) : (
                         "No tags found."
@@ -328,7 +383,10 @@ export function CreateTaskDialog() {
                             value={tag}
                             onSelect={(currentValue) => {
                               if (!selectedTags.includes(currentValue)) {
-                                setSelectedTags([...selectedTags, currentValue]);
+                                setSelectedTags([
+                                  ...selectedTags,
+                                  currentValue,
+                                ]);
                               }
                               setTagInput("");
                               setTagPopoverOpen(false);
@@ -336,7 +394,9 @@ export function CreateTaskDialog() {
                           >
                             <Check
                               className={`mr-2 h-4 w-4 ${
-                                selectedTags.includes(tag) ? "opacity-100" : "opacity-0"
+                                selectedTags.includes(tag)
+                                  ? "opacity-100"
+                                  : "opacity-0"
                               }`}
                             />
                             {tag}
@@ -344,22 +404,29 @@ export function CreateTaskDialog() {
                         ))}
                       </CommandGroup>
                     )}
-                    {tagInput && !availableTags.some((t: string) => t.toLowerCase() === tagInput.toLowerCase()) && (
-                      <CommandGroup heading="Create New">
-                        <CommandItem
-                          onSelect={() => {
-                            if (!selectedTags.includes(tagInput.trim())) {
-                              setSelectedTags([...selectedTags, tagInput.trim()]);
-                            }
-                            setTagInput("");
-                            setTagPopoverOpen(false);
-                          }}
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Create &quot;{tagInput}&quot;
-                        </CommandItem>
-                      </CommandGroup>
-                    )}
+                    {tagInput &&
+                      !availableTags.some(
+                        (t: string) =>
+                          t.toLowerCase() === tagInput.toLowerCase(),
+                      ) && (
+                        <CommandGroup heading="Create New">
+                          <CommandItem
+                            onSelect={() => {
+                              if (!selectedTags.includes(tagInput.trim())) {
+                                setSelectedTags([
+                                  ...selectedTags,
+                                  tagInput.trim(),
+                                ]);
+                              }
+                              setTagInput("");
+                              setTagPopoverOpen(false);
+                            }}
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create &quot;{tagInput}&quot;
+                          </CommandItem>
+                        </CommandGroup>
+                      )}
                   </CommandList>
                 </Command>
               </PopoverContent>
@@ -368,10 +435,10 @@ export function CreateTaskDialog() {
 
           <div className="grid gap-2">
             <Label>Description (Optional)</Label>
-            <Textarea 
-              placeholder="Add any extra notes..." 
-              value={description} 
-              onChange={e => setDescription(e.target.value)} 
+            <Textarea
+              placeholder="Add any extra notes..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
           </div>
         </div>
@@ -379,9 +446,11 @@ export function CreateTaskDialog() {
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleCreate} 
-            disabled={isCreating || !clientId || !serviceId || assigneeIds.length === 0}
+          <Button
+            onClick={handleCreate}
+            disabled={
+              isCreating || !clientId || !serviceId || assigneeIds.length === 0
+            }
           >
             {isCreating ? "Creating..." : "Create Task"}
           </Button>

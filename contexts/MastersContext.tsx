@@ -22,7 +22,9 @@ export interface MastersContextValue {
   refreshMasters: () => void;
 }
 
-const MastersContext = createContext<MastersContextValue | undefined>(undefined);
+const MastersContext = createContext<MastersContextValue | undefined>(
+  undefined,
+);
 
 export function MastersProvider({ children }: { children: ReactNode }) {
   // In a real scenario, this would be populated by useGetMastersQuery() from RTK Query
@@ -30,14 +32,19 @@ export function MastersProvider({ children }: { children: ReactNode }) {
     { id: "1", name: "VIP", color: "bg-purple-100 text-purple-800" },
     { id: "2", name: "New", color: "bg-blue-100 text-blue-800" },
   ]);
-  
+
   const [clientGroups] = useState<ClientGroup[]>([
     { id: "g1", name: "Tech Startups" },
     { id: "g2", name: "Retail" },
   ]);
 
-  const [paymentModes] = useState<string[]>(["Credit Card", "Bank Transfer", "Cash", "UPI"]);
-  
+  const [paymentModes] = useState<string[]>([
+    "Credit Card",
+    "Bank Transfer",
+    "Cash",
+    "UPI",
+  ]);
+
   const [isLoading] = useState(false);
 
   const refreshMasters = () => {
@@ -45,7 +52,9 @@ export function MastersProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <MastersContext.Provider value={{ tags, clientGroups, paymentModes, isLoading, refreshMasters }}>
+    <MastersContext.Provider
+      value={{ tags, clientGroups, paymentModes, isLoading, refreshMasters }}
+    >
       {children}
     </MastersContext.Provider>
   );

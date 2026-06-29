@@ -1,4 +1,10 @@
-import { createApi, fetchBaseQuery, type BaseQueryFn, type FetchArgs, type FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
+import {
+  createApi,
+  fetchBaseQuery,
+  type BaseQueryFn,
+  type FetchArgs,
+  type FetchBaseQueryError,
+} from "@reduxjs/toolkit/query/react";
 import { Mutex } from "async-mutex";
 
 const mutex = new Mutex();
@@ -17,13 +23,18 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
+const baseQueryWithReauth: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
   // wait until the mutex is available without locking it
   await mutex.waitForUnlock();
   let result = await baseQuery(args, api, extraOptions);
 
   const url = typeof args === "string" ? args : args.url;
-  const isAuthEndpoint = url?.includes("/auth/login") || url?.includes("/auth/refresh");
+  const isAuthEndpoint =
+    url?.includes("/auth/login") || url?.includes("/auth/refresh");
 
   if (result.error && result.error.status === 401 && !isAuthEndpoint) {
     // checking whether the mutex is locked
@@ -35,10 +46,15 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
         const refreshResult: any = await baseQuery(
           { url: "/auth/refresh", method: "POST", credentials: "include" },
           api,
-          extraOptions
+          extraOptions,
         );
-        if (refreshResult.data?.accessToken || refreshResult.data?.data?.accessToken) {
-          const newToken = refreshResult.data.accessToken || refreshResult.data.data.accessToken;
+        if (
+          refreshResult.data?.accessToken ||
+          refreshResult.data?.data?.accessToken
+        ) {
+          const newToken =
+            refreshResult.data.accessToken ||
+            refreshResult.data.data.accessToken;
           // store the new token
           localStorage.setItem("accessToken", newToken);
           // retry the initial query
@@ -66,7 +82,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 export const applicationApi = createApi({
   reducerPath: "applicationApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["User", "Task", "Client", "Service"],
+  tagTypes: ["Task", "Client", "Tag", "Service", "User", "Package"],
   endpoints: (builder) => ({
     login: builder.mutation({
       query: (credentials) => ({
@@ -106,14 +122,19 @@ export const applicationApi = createApi({
       invalidatesTags: ["User"],
       transformResponse: (response: { data: any }) => response.data,
     }),
-    
+
     // Tasks
     getTasks: builder.query({
       query: (params) => ({ url: "/tasks", params }),
       providesTags: ["Task"],
       transformResponse: (response: { data: any }) => response.data,
     }),
-    
+    getTaskById: builder.query({
+      query: (id) => `/tasks/${id}`,
+      providesTags: (result, error, id) => [{ type: "Task", id }],
+      transformResponse: (response: { data: any }) => response.data,
+    }),
+
     getTags: builder.query({
       query: () => "/tasks/tags/all",
       providesTags: ["Task"],
@@ -133,7 +154,7 @@ export const applicationApi = createApi({
       query: ({ id, status }) => ({
         url: `/tasks/${id}/status`,
         method: "PATCH",
-        body: { status }, 
+        body: { status },
       }),
       invalidatesTags: ["Task"],
       transformResponse: (response: { data: any }) => response.data,
@@ -165,7 +186,8 @@ export const applicationApi = createApi({
         method: "POST",
         body: formData,
       }),
-      transformResponse: (response: { data: { photoUrl: string } }) => response.data,
+      transformResponse: (response: { data: { photoUrl: string } }) =>
+        response.data,
     }),
 
     // Services
@@ -173,6 +195,94 @@ export const applicationApi = createApi({
       query: (params) => ({ url: "/services", params }),
       providesTags: ["Service"],
       transformResponse: (response: { data: any }) => response.data,
+    }),
+    getServiceById: builder.query({
+      query: (id: string) => `/services/${id}`,
+      providesTags: (_result, _error, id) => [{ type: "Service", id }],
+      transformResponse: (response: { data: any }) => response.data,
+    }),
+    createService: builder.mutation({
+      query: (body) => ({
+        url: "/services",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Service"],
+    }),
+    updateService: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/services/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Service"],
+    }),
+    deleteService: builder.mutation({
+      query: (id) => ({
+        url: `/services/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Service"],
+    }),
+
+    // Packages
+    getPackages: builder.query({
+      query: (params) => ({ url: "/packages", params }),
+      providesTags: ["Package"],
+      transformResponse: (response: { data: any }) => response.data,
+    }),
+    getPackageById: builder.query({
+      query: (id) => `/packages/${id}`,
+      providesTags: (result, error, id) => [{ type: "Package", id }],
+      transformResponse: (response: { data: any }) => response.data,
+    }),
+    createPackage: builder.mutation({
+      query: (body) => ({
+        url: "/packages",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Package"],
+    }),
+    updatePackage: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/packages/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Package", id },
+        "Package",
+      ],
+    }),
+    deletePackage: builder.mutation({
+      query: (id) => ({
+        url: `/packages/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Package"],
+    }),
+    subscribeClientToPackage: builder.mutation({
+      query: ({ clientId, packageId, customPrice }) => ({
+        url: `/clients/${clientId}/packages`,
+        method: "POST",
+        body: { packageId, customPrice },
+      }),
+      invalidatesTags: (result, error, { clientId }) => [
+        { type: "Client", id: clientId },
+        "Client",
+      ],
+    }),
+    subscribeClientToService: builder.mutation({
+      query: ({ clientId, serviceId, customPrice }) => ({
+        url: `/clients/${clientId}/services`,
+        method: "POST",
+        body: { serviceId, customPrice },
+      }),
+      invalidatesTags: (result, error, { clientId }) => [
+        { type: "Client", id: clientId },
+        "Client",
+      ],
     }),
 
     // Users
@@ -191,6 +301,7 @@ export const {
   useGetMeQuery,
   useUploadAvatarMutation,
   useGetTasksQuery,
+  useGetTaskByIdQuery,
   useGetTagsQuery,
   useCreateTaskMutation,
   useUpdateTaskStatusMutation,
@@ -199,5 +310,16 @@ export const {
   useCreateClientMutation,
   useUploadClientPhotoMutation,
   useGetServicesQuery,
+  useGetServiceByIdQuery,
+  useCreateServiceMutation,
+  useUpdateServiceMutation,
+  useDeleteServiceMutation,
+  useGetPackagesQuery,
+  useGetPackageByIdQuery,
+  useCreatePackageMutation,
+  useUpdatePackageMutation,
+  useDeletePackageMutation,
+  useSubscribeClientToPackageMutation,
+  useSubscribeClientToServiceMutation,
   useGetUsersQuery,
 } = applicationApi;

@@ -45,10 +45,10 @@ export default function ProfilePage() {
       toast.error("Please upload an image file");
       return;
     }
-    
+
     const formData = new FormData();
     formData.append("avatar", file);
-    
+
     try {
       await uploadAvatar(formData).unwrap();
       toast.success("Avatar updated");
@@ -123,10 +123,12 @@ export default function ProfilePage() {
               <img
                 src={user.avatar}
                 alt="Avatar preview"
-                className={`h-full w-full rounded-full object-cover ring-2 ring-border ${isUploading ? 'opacity-50' : ''}`}
+                className={`h-full w-full rounded-full object-cover ring-2 ring-border ${isUploading ? "opacity-50" : ""}`}
               />
             ) : (
-              <div className={`flex h-full w-full items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground ${isUploading ? 'opacity-50' : ''}`}>
+              <div
+                className={`flex h-full w-full items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground ${isUploading ? "opacity-50" : ""}`}
+              >
                 {user?.initials}
               </div>
             )}
@@ -175,7 +177,6 @@ export default function ProfilePage() {
               </span>
             </div>
           </div>
-         
         </CardContent>
       </Card>
       <div className="grid gap-6 lg:grid-cols-3">

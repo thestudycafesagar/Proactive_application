@@ -24,9 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  useGetClientsQuery,
-} from "@/lib/services/api";
+import { useGetClientsQuery } from "@/lib/services/api";
 import { type Client } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -47,7 +45,7 @@ const entityTypes = [
 export default function ClientsPage() {
   const { data: clientsRes, isLoading } = useGetClientsQuery(undefined);
   const clients: Client[] = clientsRes?.clients || [];
-  
+
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
@@ -69,7 +67,9 @@ export default function ClientsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Clients</h1>
           <p className="text-sm text-muted-foreground">
-            {isLoading ? "Loading..." : `${clients.length} total · ${filtered.length} shown`}
+            {isLoading
+              ? "Loading..."
+              : `${clients.length} total · ${filtered.length} shown`}
           </p>
         </div>
 
@@ -108,7 +108,9 @@ export default function ClientsPage() {
 
       <div className="rounded-xl border bg-card shadow-sm">
         {isLoading ? (
-          <div className="flex justify-center p-8"><Loader2 className="animate-spin text-muted-foreground" /></div>
+          <div className="flex justify-center p-8">
+            <Loader2 className="animate-spin text-muted-foreground" />
+          </div>
         ) : filtered.length === 0 ? (
           <EmptyState />
         ) : (
@@ -128,8 +130,16 @@ export default function ClientsPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={c.photoUrl ? `http://localhost:5000${c.photoUrl}` : undefined} />
-                        <AvatarFallback>{c.name.charAt(0).toUpperCase()}</AvatarFallback>
+                        <AvatarImage
+                          src={
+                            c.photoUrl
+                              ? `http://localhost:5000${c.photoUrl}`
+                              : undefined
+                          }
+                        />
+                        <AvatarFallback>
+                          {c.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
                       </Avatar>
                       <div>
                         <Link
@@ -186,5 +196,4 @@ function EmptyState() {
       </p>
     </div>
   );
-
 }

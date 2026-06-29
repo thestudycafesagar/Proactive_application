@@ -3,14 +3,8 @@
 import { useMemo, useState } from "react";
 import { Clock, Circle, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRouter } from "next/navigation";
 import {
   Pagination,
   PaginationContent,
@@ -19,10 +13,12 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { CreateTaskDialog } from "./CreateTaskDialog";
-import { useGetTasksQuery, useUpdateTaskStatusMutation } from "@/lib/services/api";
+import {
+  useGetTasksQuery,
+  useUpdateTaskStatusMutation,
+} from "@/lib/services/api";
 import { type Task, type TaskStatus, type TaskPriority } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
-import { StatusBadge } from "@/components/shared/StatusBadge";
 import { TaskToolbar } from "./TaskToolbar";
 import { TasksTable } from "./TasksTable";
 
@@ -36,32 +32,48 @@ const COLUMNS: TaskStatus[] = [
 
 const getPriorityColor = (priority: TaskPriority) => {
   switch (priority) {
-    case "Urgent": return "bg-red-500";
-    case "High": return "bg-orange-500";
-    case "Medium": return "bg-blue-500";
-    case "Low": return "bg-slate-400";
-    default: return "bg-slate-400";
+    case "Urgent":
+      return "bg-red-500";
+    case "High":
+      return "bg-orange-500";
+    case "Medium":
+      return "bg-blue-500";
+    case "Low":
+      return "bg-slate-400";
+    default:
+      return "bg-slate-400";
   }
 };
 
 const getPriorityBadge = (priority: TaskPriority) => {
   switch (priority) {
-    case "Urgent": return "bg-red-50 text-red-700 border-red-200";
-    case "High": return "bg-orange-50 text-orange-700 border-orange-200";
-    case "Medium": return "bg-blue-50 text-blue-700 border-blue-200";
-    case "Low": return "bg-slate-50 text-slate-700 border-slate-200";
-    default: return "bg-slate-50 text-slate-700 border-slate-200";
+    case "Urgent":
+      return "bg-red-50 text-red-700 border-red-200";
+    case "High":
+      return "bg-orange-50 text-orange-700 border-orange-200";
+    case "Medium":
+      return "bg-blue-50 text-blue-700 border-blue-200";
+    case "Low":
+      return "bg-slate-50 text-slate-700 border-slate-200";
+    default:
+      return "bg-slate-50 text-slate-700 border-slate-200";
   }
 };
 
 const getColumnDot = (status: TaskStatus) => {
   switch (status) {
-    case "Pending": return "bg-slate-400";
-    case "In Progress": return "bg-blue-500";
-    case "Under Review": return "bg-purple-500";
-    case "On Hold": return "bg-amber-500";
-    case "Completed": return "bg-emerald-500";
-    default: return "bg-slate-400";
+    case "Pending":
+      return "bg-slate-400";
+    case "In Progress":
+      return "bg-blue-500";
+    case "Under Review":
+      return "bg-purple-500";
+    case "On Hold":
+      return "bg-amber-500";
+    case "Completed":
+      return "bg-emerald-500";
+    default:
+      return "bg-slate-400";
   }
 };
 
@@ -70,7 +82,9 @@ export default function TasksPage() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("dueDate");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [dueFilter, setDueFilter] = useState<"all" | "today" | "overdue">("all");
+  const [dueFilter, setDueFilter] = useState<"all" | "today" | "overdue">(
+    "all",
+  );
   const [filterClient, setFilterClient] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [visibleColumns, setVisibleColumns] = useState<TaskStatus[]>([
@@ -80,23 +94,29 @@ export default function TasksPage() {
     "Completed",
   ]);
   const [tableVisibleColumns, setTableVisibleColumns] = useState<string[]>([
-    "assignee", "title", "client", "priority", "status", "dueDate"
+    "assignee",
+    "title",
+    "client",
+    "priority",
+    "status",
+    "dueDate",
   ]);
-  
-  const { data: tasksRes, isLoading } = useGetTasksQuery({ 
-    limit: 20, 
+
+  const { data: tasksRes, isLoading } = useGetTasksQuery({
+    limit: 20,
     page,
     dueStatus: dueFilter === "all" ? undefined : dueFilter,
     search: search || undefined,
-    clientId: filterClient.length === 0 ? undefined : filterClient.join(','),
+    clientId: filterClient.length === 0 ? undefined : filterClient.join(","),
     sortBy,
-    sortOrder
+    sortOrder,
   });
   const [updateStatus] = useUpdateTaskStatusMutation();
-  
-  const [detail, setDetail] = useState<Task | null>(null);
+  const router = useRouter();
 
   const tasks: Task[] = tasksRes?.tasks || [];
+
+  console.log("tasks: ",tasks)
 
   const grouped = useMemo(() => {
     return COLUMNS.reduce(
@@ -124,7 +144,7 @@ export default function TasksPage() {
     e.preventDefault();
     const taskId = e.dataTransfer.getData("taskId");
     if (!taskId) return;
-    
+
     try {
       await updateStatus({ id: taskId, status: newStatus }).unwrap();
     } catch (err) {
@@ -148,7 +168,7 @@ export default function TasksPage() {
             </TabsList>
           </Tabs>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <CreateTaskDialog />
         </div>
@@ -173,106 +193,123 @@ export default function TasksPage() {
       />
 
       {viewMode === "table" ? (
-        <TasksTable tasks={tasks} onTaskClick={setDetail} visibleColumns={tableVisibleColumns as any} />
+        <TasksTable
+          tasks={tasks}
+          onTaskClick={(task) => router.push(`/tasks/${task._id}`)}
+          visibleColumns={tableVisibleColumns as any}
+        />
       ) : (
         <div className="flex overflow-x-auto gap-5 pb-4 snap-x">
-        {COLUMNS.filter(c => visibleColumns.includes(c)).map((col) => (
-          <div 
-            key={col} 
-            className="rounded-xl border bg-slate-50/50 p-4 flex flex-col min-h-[500px] min-w-[200px] w-full max-w-[280px] flex-shrink-0 snap-start"
-            onDrop={(e) => handleDrop(e, col)}
-            onDragOver={handleDragOver}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className={`h-2.5 w-2.5 rounded-full ${getColumnDot(col)}`} />
-                <h3 className="text-sm font-semibold tracking-tight">{col}</h3>
-              </div>
-              <span className="rounded-full bg-slate-200/50 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-                {grouped[col].length}
-              </span>
-            </div>
-            
-            <div className="space-y-3 flex-1">
-              {grouped[col].length === 0 ? (
-                <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white/50 text-sm text-slate-400">
-                  Drop tasks here
-                </div>
-              ) : (
-                grouped[col].map((t) => (
+          {COLUMNS.filter((c) => visibleColumns.includes(c)).map((col) => (
+            <div
+              key={col}
+              className="rounded-xl border bg-slate-50/50 p-4 flex flex-col min-h-[500px] min-w-[200px] w-full max-w-[280px] flex-shrink-0 snap-start"
+              onDrop={(e) => handleDrop(e, col)}
+              onDragOver={handleDragOver}
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <div
-                    key={t._id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, t._id)}
-                    onClick={() => setDetail(t)}
-                    className="group relative w-full cursor-pointer overflow-hidden rounded-lg border bg-white p-4 text-left shadow-sm transition-all hover:shadow-md hover:border-slate-300"
-                  >
-                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${getPriorityColor(t.priority)}`} />
-                    
-                    <div className="mb-2.5 pl-1.5 flex items-start justify-between gap-2">
-                      <span className="font-medium text-sm text-slate-900 leading-snug line-clamp-2">
-                        {t.serviceId?.name || "Unnamed Task"}
-                      </span>
-                    </div>
-                    
-                    <div className="pl-1.5 mb-4 flex items-center gap-1.5 text-xs text-slate-500">
-                      <Circle className="h-3 w-3" />
-                      <span className="truncate">{t.clientId?.name || "No Client"}</span>
-                    </div>
-                    
-                    <div className="pl-1.5 flex flex-wrap items-center justify-between mt-auto gap-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="outline" className={`px-1.5 py-0 font-medium text-[10px] uppercase tracking-wider ${getPriorityBadge(t.priority)}`}>
-                          {t.priority}
-                        </Badge>
-                        {t.dueDate && (
-                          <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 shadow-sm">
-                            <Clock className="h-3 w-3 text-slate-400" />
-                            {formatDate(t.dueDate)}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center">
-                        {t.assigneeIds && t.assigneeIds.length > 0 ? (
-                          t.assigneeIds.map((assignee, idx) => (
-                            <div 
-                              key={assignee._id}
-                              className="h-6 w-6 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-medium text-white shadow-sm ring-2 ring-white"
-                              title={assignee.name}
-                              style={{ marginLeft: idx > 0 ? '-0.5rem' : '0' }}
-                            >
-                              {assignee.name?.charAt(0).toUpperCase()}
-                            </div>
-                          ))
-                        ) : (
-                          <div 
-                            className="h-6 w-6 rounded-full bg-slate-300 flex items-center justify-center text-[10px] font-medium text-white shadow-sm ring-2 ring-white"
-                            title="Unassigned"
-                          >
-                            ?
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    className={`h-2.5 w-2.5 rounded-full ${getColumnDot(col)}`}
+                  />
+                  <h3 className="text-sm font-semibold tracking-tight">
+                    {col}
+                  </h3>
+                </div>
+                <span className="rounded-full bg-slate-200/50 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                  {grouped[col].length}
+                </span>
+              </div>
+
+              <div className="space-y-3 flex-1">
+                {grouped[col].length === 0 ? (
+                  <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white/50 text-sm text-slate-400">
+                    Drop tasks here
                   </div>
-                ))
-              )}
+                ) : (
+                  grouped[col].map((t) => (
+                    <div
+                      key={t._id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, t._id)}
+                      onClick={() => router.push(`/tasks/${t._id}`)}
+                      className="group relative w-full cursor-pointer overflow-hidden rounded-lg border bg-white p-4 text-left shadow-sm transition-all hover:shadow-md hover:border-slate-300"
+                    >
+                      <div
+                        className={`absolute left-0 top-0 bottom-0 w-1 ${getPriorityColor(t.priority)}`}
+                      />
+
+                      <div className="mb-2.5 pl-1.5 flex items-start justify-between gap-2">
+                        <span className="font-medium text-sm text-slate-900 leading-snug line-clamp-2">
+                          {(t as any).title || t.serviceId?.name || "Unnamed Task"}
+                        </span>
+                      </div>
+
+                      <div className="pl-1.5 mb-4 flex items-center gap-1.5 text-xs text-slate-500">
+                        <Circle className="h-3 w-3" />
+                        <span className="truncate">
+                          {t.clientId?.name || "No Client"}
+                        </span>
+                      </div>
+
+                      <div className="pl-1.5 flex flex-wrap items-center justify-between mt-auto gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className={`px-1.5 py-0 font-medium text-[10px] uppercase tracking-wider ${getPriorityBadge(t.priority)}`}
+                          >
+                            {t.priority}
+                          </Badge>
+                          {t.dueDate && (
+                            <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 shadow-sm">
+                              <Clock className="h-3 w-3 text-slate-400" />
+                              {formatDate(t.dueDate)}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center">
+                          {t.assigneeIds && t.assigneeIds.length > 0 ? (
+                            t.assigneeIds.map((assignee, idx) => (
+                              <div
+                                key={assignee._id}
+                                className="h-6 w-6 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-medium text-white shadow-sm ring-2 ring-white"
+                                title={assignee.name}
+                                style={{
+                                  marginLeft: idx > 0 ? "-0.5rem" : "0",
+                                }}
+                              >
+                                {assignee.name?.charAt(0).toUpperCase()}
+                              </div>
+                            ))
+                          ) : (
+                            <div
+                              className="h-6 w-6 rounded-full bg-slate-300 flex items-center justify-center text-[10px] font-medium text-white shadow-sm ring-2 ring-white"
+                              title="Unassigned"
+                            >
+                              ?
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
       )}
 
       {tasksRes?.pagination && tasksRes.pagination.pages > 1 && (
         <Pagination className="mt-6 mb-2 border-t pt-4">
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious 
-                href="#" 
+              <PaginationPrevious
+                href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  if (page > 1) setPage(p => p - 1);
+                  if (page > 1) setPage((p) => p - 1);
                 }}
                 className={page === 1 ? "pointer-events-none opacity-50" : ""}
               />
@@ -281,24 +318,22 @@ export default function TasksPage() {
               Page {page} of {tasksRes.pagination.pages}
             </PaginationItem>
             <PaginationItem>
-              <PaginationNext 
-                href="#" 
+              <PaginationNext
+                href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  if (page < tasksRes.pagination.pages) setPage(p => p + 1);
+                  if (page < tasksRes.pagination.pages) setPage((p) => p + 1);
                 }}
-                className={page === tasksRes.pagination.pages ? "pointer-events-none opacity-50" : ""}
+                className={
+                  page === tasksRes.pagination.pages
+                    ? "pointer-events-none opacity-50"
+                    : ""
+                }
               />
             </PaginationItem>
           </PaginationContent>
         </Pagination>
       )}
-
-      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
-        {detail && (
-          <TaskDetailDialog task={detail} onClose={() => setDetail(null)} />
-        )}
-      </Dialog>
     </div>
   );
 }
@@ -314,41 +349,5 @@ function PriorityBadge({ priority }: { priority: TaskPriority }) {
     <Badge variant="outline" className={`${map[priority]} text-[10px]`}>
       {priority}
     </Badge>
-  );
-}
-
-
-function TaskDetailDialog({
-  task,
-  onClose: _onClose,
-}: {
-  task: Task;
-  onClose: () => void;
-}) {
-  return (
-    <DialogContent className="sm:max-w-lg">
-      <DialogHeader>
-        <DialogTitle>{task.serviceId?.name || "Unnamed Task"}</DialogTitle>
-        <DialogDescription>
-          {task.clientId?.name || "No Client"} 
-          {task.dueDate ? ` · Due ${formatDate(task.dueDate)}` : ""}
-        </DialogDescription>
-      </DialogHeader>
-      <div className="space-y-4">
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline">{task.status}</Badge>
-          <StatusBadge status={task.priority} />
-        </div>
-
-        <div>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Description
-          </h4>
-          <p className="text-sm text-muted-foreground">
-            {task.description || "No description provided."}
-          </p>
-        </div>
-      </div>
-    </DialogContent>
   );
 }

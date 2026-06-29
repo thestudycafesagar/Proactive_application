@@ -14,7 +14,7 @@ export default function ForgotPasswordPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [apiError, setApiError] = useState("");
   const router = useRouter();
-  
+
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   useEffect(() => {
     if (isAuthenticated && !authLoading) {

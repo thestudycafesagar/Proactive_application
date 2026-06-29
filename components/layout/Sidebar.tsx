@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  Layers,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -25,10 +26,36 @@ type NavItem = {
 };
 const navItems: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/clients", label: "Clients", icon: Users, requiredPermission: "clients.view" },
-  { to: "/tasks", label: "Tasks", icon: CheckSquare, requiredPermission: "tasks.view" },
-  { to: "/invoices", label: "Invoices", icon: Receipt, requiredPermission: "invoices.view" },
-  { to: "/settings", label: "Settings", icon: Settings, requiredPermission: "settings.view" },
+  {
+    to: "/clients",
+    label: "Clients",
+    icon: Users,
+    requiredPermission: "clients.view",
+  },
+  {
+    to: "/tasks",
+    label: "Tasks",
+    icon: CheckSquare,
+    requiredPermission: "tasks.view",
+  },
+  {
+    to: "/invoices",
+    label: "Invoices",
+    icon: Receipt,
+    requiredPermission: "invoices.view",
+  },
+  {
+    to: "/services",
+    label: "Services",
+    icon: Layers,
+    requiredPermission: "settings.view", // Assuming it falls under settings for now
+  },
+  {
+    to: "/settings",
+    label: "Settings",
+    icon: Settings,
+    requiredPermission: "settings.view",
+  },
 ];
 
 import { usePathname } from "next/navigation";

@@ -47,19 +47,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsInitialized(true);
   }, []);
 
-  const { data, isLoading: isQueryLoading, isFetching, isError } = useGetMeQuery(undefined, {
+  const {
+    data,
+    isLoading: isQueryLoading,
+    isFetching,
+    isError,
+  } = useGetMeQuery(undefined, {
     skip: !token, // Only fetch if token exists
   });
 
   // Loading state: we are loading if we haven't checked localStorage yet,
   // OR if we have a token and the query is still fetching.
-  const isAuthLoading = !isInitialized || (!!token && (isQueryLoading || isFetching) && !data);
+  const isAuthLoading =
+    !isInitialized || (!!token && (isQueryLoading || isFetching) && !data);
 
   let user: AuthUser | null = null;
 
   if (data?.user) {
     const backendUser = data.user;
-    console.log("User from API:", backendUser);
     user = {
       id: backendUser._id || backendUser.id,
       name: backendUser.name || backendUser.username,
@@ -71,11 +76,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       phone: backendUser.phone || "",
       location: backendUser.location || "",
       bio: backendUser.bio || "",
-      plan: backendUser.tenantId?.plan?.razorpaySubscriptionId ? "Premium" : "Free",
-      avatar: backendUser.photoUrl 
-        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${backendUser.photoUrl}`
+      plan: backendUser.tenantId?.plan?.razorpaySubscriptionId
+        ? "Premium"
+        : "Free",
+      avatar: backendUser.photoUrl
+        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${backendUser.photoUrl}`
         : undefined,
-      initials: (backendUser.name?.[0] || backendUser.email?.[0] || "U").toUpperCase(),
+      initials: (
+        backendUser.name?.[0] ||
+        backendUser.email?.[0] ||
+        "U"
+      ).toUpperCase(),
     };
   }
 

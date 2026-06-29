@@ -8,10 +8,19 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuCheckboxItem
+  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, List, Kanban, Filter, ArrowUpDown, Columns, Building2, Settings2 } from "lucide-react";
+import {
+  Search,
+  List,
+  Kanban,
+  Filter,
+  ArrowUpDown,
+  Columns,
+  Building2,
+  Settings2,
+} from "lucide-react";
 import { type TaskStatus, type TaskPriority } from "@/lib/types";
 import { useGetClientsQuery } from "@/lib/services/api";
 
@@ -48,7 +57,7 @@ export function TaskToolbar({
   filterClient,
   setFilterClient,
   tableVisibleColumns,
-  setTableVisibleColumns
+  setTableVisibleColumns,
 }: TaskToolbarProps) {
   // debounced search state
   const [localSearch, setLocalSearch] = useState(search);
@@ -62,7 +71,10 @@ export function TaskToolbar({
     return () => clearTimeout(handler);
   }, [clientSearch]);
 
-  const { data: clientsRes } = useGetClientsQuery({ limit: 5, search: debouncedClientSearch || undefined });
+  const { data: clientsRes } = useGetClientsQuery({
+    limit: 5,
+    search: debouncedClientSearch || undefined,
+  });
   const clients = clientsRes?.clients || [];
 
   useEffect(() => {
@@ -88,12 +100,19 @@ export function TaskToolbar({
       <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-9 whitespace-nowrap bg-card">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 whitespace-nowrap bg-card"
+            >
               <Building2 className="mr-2 h-4 w-4" />
               Client Filter
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="max-h-[350px] overflow-y-auto w-64">
+          <DropdownMenuContent
+            align="end"
+            className="max-h-[350px] overflow-y-auto w-64"
+          >
             <div className="p-2 border-b mb-1">
               <div className="relative">
                 <Search className="absolute left-2 top-2 h-4 w-4 text-muted-foreground" />
@@ -114,7 +133,7 @@ export function TaskToolbar({
                 setFilterClient?.([]);
               }}
             >
-              <Checkbox 
+              <Checkbox
                 checked={!filterClient || filterClient.length === 0}
                 className="h-4 w-4 rounded-[4px] border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
               />
@@ -131,13 +150,15 @@ export function TaskToolbar({
                   e.preventDefault();
                   if (!filterClient) return;
                   if (filterClient.includes(client._id)) {
-                    setFilterClient?.(filterClient.filter(id => id !== client._id));
+                    setFilterClient?.(
+                      filterClient.filter((id) => id !== client._id),
+                    );
                   } else {
                     setFilterClient?.([...filterClient, client._id]);
                   }
                 }}
               >
-                <Checkbox 
+                <Checkbox
                   checked={filterClient?.includes(client._id) || false}
                   className="h-4 w-4 rounded-[4px] border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                 />
@@ -149,98 +170,122 @@ export function TaskToolbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {viewMode === "table" && tableVisibleColumns && setTableVisibleColumns && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 whitespace-nowrap bg-card">
-                <Settings2 className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[180px] p-2">
-              {["assignee", "title", "client", "priority", "status", "dueDate"].map(col => (
-                <DropdownMenuItem
-                  key={col}
-                  className="flex items-center gap-3 px-2 py-2 cursor-pointer"
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    const isChecked = tableVisibleColumns.includes(col);
-                    if (!isChecked) {
-                      setTableVisibleColumns([...tableVisibleColumns, col]);
-                    } else {
-                      if (tableVisibleColumns.length > 1) {
-                        setTableVisibleColumns(tableVisibleColumns.filter(c => c !== col));
-                      }
-                    }
-                  }}
+        {viewMode === "table" &&
+          tableVisibleColumns &&
+          setTableVisibleColumns && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 whitespace-nowrap bg-card"
                 >
-                  <Checkbox 
-                    checked={tableVisibleColumns.includes(col)}
-                    className="h-4 w-4 rounded-[4px] border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                  />
-                  <span className="text-sm font-medium text-slate-700 capitalize">
-                    {col.replace(/([A-Z])/g, ' $1').trim()}
-                  </span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+                  <Settings2 className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[180px] p-2">
+                {[
+                  "assignee",
+                  "title",
+                  "client",
+                  "priority",
+                  "status",
+                  "dueDate",
+                ].map((col) => (
+                  <DropdownMenuItem
+                    key={col}
+                    className="flex items-center gap-3 px-2 py-2 cursor-pointer"
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      const isChecked = tableVisibleColumns.includes(col);
+                      if (!isChecked) {
+                        setTableVisibleColumns([...tableVisibleColumns, col]);
+                      } else {
+                        if (tableVisibleColumns.length > 1) {
+                          setTableVisibleColumns(
+                            tableVisibleColumns.filter((c) => c !== col),
+                          );
+                        }
+                      }
+                    }}
+                  >
+                    <Checkbox
+                      checked={tableVisibleColumns.includes(col)}
+                      className="h-4 w-4 rounded-[4px] border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                    />
+                    <span className="text-sm font-medium text-slate-700 capitalize">
+                      {col.replace(/([A-Z])/g, " $1").trim()}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
-        {viewMode === "kanban" && visibleColumns && setVisibleColumns && allColumns && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 whitespace-nowrap bg-card">
-                <Settings2 className=" h-4 w-4" />
-                
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[180px] p-2">
-              <DropdownMenuItem
-                className="flex items-center gap-3 px-2 py-2 cursor-pointer"
-                onSelect={(e) => {
-                  e.preventDefault();
-                  const isChecked = visibleColumns.length === allColumns.length;
-                  if (!isChecked) {
-                    setVisibleColumns([...allColumns]);
-                  }
-                }}
-              >
-                <Checkbox 
-                  checked={visibleColumns.length === allColumns.length}
-                  className="h-4 w-4 rounded-[4px] border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                />
-                <span className="text-sm font-medium text-slate-700">
-                  All Columns
-                </span>
-              </DropdownMenuItem>
-              {allColumns.map((col) => (
+        {viewMode === "kanban" &&
+          visibleColumns &&
+          setVisibleColumns &&
+          allColumns && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 whitespace-nowrap bg-card"
+                >
+                  <Settings2 className=" h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[180px] p-2">
                 <DropdownMenuItem
-                  key={col}
                   className="flex items-center gap-3 px-2 py-2 cursor-pointer"
                   onSelect={(e) => {
                     e.preventDefault();
-                    const isChecked = visibleColumns.includes(col);
+                    const isChecked =
+                      visibleColumns.length === allColumns.length;
                     if (!isChecked) {
-                      setVisibleColumns([...visibleColumns, col]);
-                    } else {
-                      if (visibleColumns.length > 1) {
-                        setVisibleColumns(visibleColumns.filter((c) => c !== col));
-                      }
+                      setVisibleColumns([...allColumns]);
                     }
                   }}
                 >
-                  <Checkbox 
-                    checked={visibleColumns.includes(col)}
+                  <Checkbox
+                    checked={visibleColumns.length === allColumns.length}
                     className="h-4 w-4 rounded-[4px] border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                   />
                   <span className="text-sm font-medium text-slate-700">
-                    {col}
+                    All Columns
                   </span>
                 </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+                {allColumns.map((col) => (
+                  <DropdownMenuItem
+                    key={col}
+                    className="flex items-center gap-3 px-2 py-2 cursor-pointer"
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      const isChecked = visibleColumns.includes(col);
+                      if (!isChecked) {
+                        setVisibleColumns([...visibleColumns, col]);
+                      } else {
+                        if (visibleColumns.length > 1) {
+                          setVisibleColumns(
+                            visibleColumns.filter((c) => c !== col),
+                          );
+                        }
+                      }
+                    }}
+                  >
+                    <Checkbox
+                      checked={visibleColumns.includes(col)}
+                      className="h-4 w-4 rounded-[4px] border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                    />
+                    <span className="text-sm font-medium text-slate-700">
+                      {col}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
         <div className="flex items-center rounded-md border bg-card p-1">
           <Button
